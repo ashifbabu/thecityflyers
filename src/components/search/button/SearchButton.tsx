@@ -1,24 +1,22 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React from 'react'
+import { cn } from '@/lib/utils'
 
 const SearchButton = () => {
   return (
     <button
       type="submit"
       className={cn(
-        "px-8 py-3 rounded-lg font-medium",
-        "bg-gray-900 dark:bg-gray-100",
-        "text-white dark:text-gray-900",
-        "hover:bg-gray-800 dark:hover:bg-gray-200",
-        "focus:outline-none focus:ring-2",
-        "focus:ring-gray-900 dark:focus:ring-gray-100",
-        "focus:ring-offset-2 dark:focus:ring-offset-gray-800",
-        "transition-colors"
+        "w-full max-w-xs mx-auto rounded-md", // Center and round corners
+        "transition-all duration-200 flex items-center justify-center font-medium py-4 px-8",
+        // Light mode: black background, white text
+        "bg-black text-white hover:bg-gray-900",
+        // Dark mode: white background, black text
+        "dark:bg-white dark:text-black dark:hover:bg-gray-100"
       )}
     >
       Search
     </button>
-  );
-};
+  )
+}
 
-export default SearchButton;
+export default SearchButton
