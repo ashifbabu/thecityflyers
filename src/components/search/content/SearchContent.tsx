@@ -1,3 +1,4 @@
+// SearchContent.tsx
 'use client'
 
 import React, { useState } from 'react'
@@ -10,11 +11,41 @@ import TravelersInput from '../travelers/TravelersInput'
 import FareTypes from '../fare/FareTypes'
 import SearchButton from '../button/SearchButton'
 
+interface Airport {
+  city: string
+  country: string
+  airportName: string
+  code: string
+}
+
 const SearchContent = () => {
   const [fromCity, setFromCity] = useState('Dhaka')
   const [fromAirport, setFromAirport] = useState('Hazrat Shahjalal International Airport')
   const [toCity, setToCity] = useState('Chittagong')
   const [toAirport, setToAirport] = useState('Shah Amanat International')
+
+  // Example suggestions
+  const suggestions: Airport[] = [
+    {
+      city: "Dhaka",
+      country: "Bangladesh",
+      airportName: "Hazrat Shahjalal International Airport",
+      code: "DAC"
+    },
+    {
+      city: "Chittagong",
+      country: "Bangladesh",
+      airportName: "Shah Amanat International",
+      code: "CGP"
+    },
+    {
+      city: "Cox's Bazar",
+      country: "Bangladesh",
+      airportName: "Cox's Bazar",
+      code: "CXB"
+    },
+    // Add more airports as needed
+  ]
 
   const swapLocations = () => {
     setFromCity(toCity)
@@ -27,21 +58,23 @@ const SearchContent = () => {
     <div className="w-full bg-gray-100 dark:bg-gray-900 p-6 space-y-6">
       <TripTypes />
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
         {/* Location Selection */}
         <div className="lg:col-span-5">
-          <div className="relative grid grid-rows-2 gap-1">
+          <div className="relative grid grid-rows-2 gap-0">
             <LocationInput
               type="from"
               value={fromCity}
               subValue={fromAirport}
               onChange={setFromCity}
+              suggestions={suggestions}
             />
             <LocationInput
               type="to"
               value={toCity}
               subValue={toAirport}
               onChange={setToCity}
+              suggestions={suggestions}
             />
             <button
               type="button"
@@ -67,7 +100,7 @@ const SearchContent = () => {
         
         {/* Date Selection */}
         <div className="lg:col-span-4">
-          <div className="grid grid-cols-2 gap-1 h-full">
+          <div className="grid grid-cols-2 gap-0 h-full">
             <DateInput
               type="departure"
               value="Select date"
@@ -93,7 +126,7 @@ const SearchContent = () => {
 
       <FareTypes />
       
-      <div className="flex justify-center">
+      <div className="flex justify-center w-full">
         <SearchButton />
       </div>
     </div>
@@ -101,4 +134,3 @@ const SearchContent = () => {
 }
 
 export default SearchContent
-

@@ -29,3 +29,16 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+
+
+.rdp-responsive .rdp-months {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .rdp-responsive .rdp-months {
+    flex-direction: row;
+  }
+}
