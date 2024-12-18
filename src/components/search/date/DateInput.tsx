@@ -1,8 +1,8 @@
-// DateInput.tsx
 import React, { useState, useRef, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { useTripType } from '@/hooks/use-trip-type'
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid'
 
 interface DateInputProps {
   type: 'departure' | 'return'
@@ -65,6 +65,11 @@ const DateInput: React.FC<DateInputProps> = ({ type, value, subValue, onChange }
         <div className="text-sm text-gray-600 dark:text-gray-300">
           {weekday}
         </div>
+        {showCalendar ? (
+          <ChevronUpIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
+        ) : (
+          <ChevronDownIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
+        )}
       </div>
 
       {showCalendar && (
