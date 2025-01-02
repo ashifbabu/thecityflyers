@@ -8,7 +8,7 @@ import Sidebar from "@/components/sidebar/Sidebar";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Travel Website",
+  title: "The City Flyers",
   description: "Your complete travel solution",
 };
 
