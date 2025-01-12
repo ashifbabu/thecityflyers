@@ -1,11 +1,8 @@
 import { ReactNode } from 'react';
 
-export interface MenuItem {
+export interface MenuItemProps {
   href: string;
   label: string;
   icon: ReactNode;
-}
-
-export interface MenuItemProps extends MenuItem {
-  className?: string;
+  children?: MenuItemProps[]; // Allows nesting for submenus
 }
