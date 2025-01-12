@@ -9,6 +9,8 @@ import NotificationIcon from './icons/NotificationIcon';
 import ThemeIcon from './icons/ThemeIcon';
 import AuthButtons from './auth/AuthButtons';
 import MobileMenu from './mobile/MobileMenu';
+import Logo from '../header/Logo';
+
 
 const Header = () => {
   const { isCollapsed } = useSidebar();
@@ -19,7 +21,7 @@ const Header = () => {
         <div className="flex items-center justify-between h-16 px-4 lg:px-8">
           {/* Logo - Hidden on mobile when sidebar is present */}
           <div className="hidden lg:block flex-shrink-0">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Travel</h1>
+          <Logo width={150} height={50} color="#0B1E37" />
           </div>
 
           {/* Mobile Menu & Search */}

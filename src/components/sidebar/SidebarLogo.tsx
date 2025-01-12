@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import Logo from '../header/Logo';
 
 interface SidebarLogoProps {
   isCollapsed: boolean;
@@ -14,7 +15,7 @@ const SidebarLogo = ({ isCollapsed }: SidebarLogoProps) => {
         "font-bold text-xl transition-all duration-300",
         isCollapsed ? "scale-0" : "scale-100"
       )}>
-        Travel
+         <Logo width={120} height={40} color="#0B1E37" />
       </span>
     </div>
   );
