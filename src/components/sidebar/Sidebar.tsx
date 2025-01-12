@@ -12,6 +12,16 @@ import MobileToggle from './MobileToggle';
 const Sidebar = () => {
   const { isCollapsed, isMobileOpen, toggleSidebar, toggleMobile, closeMobile } = useSidebar();
 
+  // Updated toggleSidebar function to handle submenu closing first
+  const handleSidebarToggle = () => {
+    const openSubmenus = document.querySelectorAll('.submenu-open');
+    if (openSubmenus.length > 0) {
+      openSubmenus.forEach((submenu) => submenu.classList.remove('submenu-open')); // Close all open submenus first
+    } else {
+      toggleSidebar(); // Collapse the sidebar if no submenu is open
+    }
+  };
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -26,14 +36,17 @@ const Sidebar = () => {
       <MobileToggle isOpen={isMobileOpen} onClick={toggleMobile} />
 
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed top-0 left-0 z-40 h-screen transition-all duration-300",
-        "bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700",
-        isCollapsed ? "w-16" : "w-64",
-        "lg:sticky lg:top-16", // Make sidebar sticky and start below header
-        isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
-        <SidebarToggle onClick={toggleSidebar} />
+      <aside
+        id="sidebar"
+        className={cn(
+          "fixed top-0 left-0 z-40 h-screen transition-all duration-300",
+          "bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700",
+          isCollapsed ? "w-16" : "w-64",
+          "lg:sticky lg:top-16",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        <SidebarToggle onClick={handleSidebarToggle} />
         <SidebarLogo isCollapsed={isCollapsed} />
 
         {/* Navigation */}
@@ -44,6 +57,7 @@ const Sidebar = () => {
               {...item}
               isCollapsed={isCollapsed}
               onClick={closeMobile}
+              toggleSidebar={toggleSidebar}
             />
           ))}
         </nav>
