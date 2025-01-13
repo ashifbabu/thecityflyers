@@ -5,13 +5,14 @@ import { useTheme } from 'next-themes';
 interface LogoProps {
   width?: number;
   height?: number;
+  color?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ width = 512, height = 512 }) => {
+const Logo: React.FC<LogoProps> = ({ width = 512, height = 512, color }) => {
   const { resolvedTheme } = useTheme();
 
-  // Determine the logo color based on the current theme
-  const color = resolvedTheme === 'dark' ? '#ffffff' : '#000000';
+  // Use the passed color prop or fallback to the theme-based color
+  const logoColor = color || (resolvedTheme === 'dark' ? '#ffffff' : '#000000');
 
   const svgString = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 512 512">
@@ -36,4 +37,3 @@ const Logo: React.FC<LogoProps> = ({ width = 512, height = 512 }) => {
 };
 
 export default Logo;
-
