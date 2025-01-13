@@ -1,13 +1,18 @@
-import React from 'react'
-import Image from 'next/image'
+import React from 'react';
+import Image from 'next/image';
+import { useTheme } from 'next-themes';
 
 interface LogoProps {
-  width?: number
-  height?: number
-  color?: string
+  width?: number;
+  height?: number;
 }
 
-const Logo: React.FC<LogoProps> = ({ width = 512, height = 512, color = '#000000' }) => {
+const Logo: React.FC<LogoProps> = ({ width = 512, height = 512 }) => {
+  const { resolvedTheme } = useTheme();
+
+  // Determine the logo color based on the current theme
+  const color = resolvedTheme === 'dark' ? '#ffffff' : '#000000';
+
   const svgString = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 512 512">
       <g transform="translate(0.000000,832.000000) scale(0.100000,-0.100000)" fill="${color}">
@@ -16,9 +21,9 @@ const Logo: React.FC<LogoProps> = ({ width = 512, height = 512, color = '#000000
         <path d="M0,6036.464c2.187-544.404,205.513-1123.789,566.26-1604.775c514.893-688.701,1247.314-1057.09,2101.074-1057.09c245.967,0,425.254,20.771,650.439,78.701c418.682,106.045,743.359,266.738,1134.707,560.801c85.264,64.502,96.201,86.367,21.865,42.637c-194.58-114.785-605.605-273.291-866.885-334.521c-260.166-62.305-405.557-76.523-754.287-77.617c-337.793,0-433.989,8.76-672.3,61.221c-128.989,28.438-389.165,115.889-519.253,173.818c-561.895,252.51-1042.891,720.4-1331.479,1296.494c-138.838,277.666-260.176,624.214-301.724,870.171C16.396,6112.982,0,6106.43,0,6036.464z"/>
       </g>
     </svg>
-  `
+  `;
 
-  const svgBase64 = Buffer.from(svgString).toString('base64')
+  const svgBase64 = Buffer.from(svgString).toString('base64');
 
   return (
     <Image
@@ -27,7 +32,8 @@ const Logo: React.FC<LogoProps> = ({ width = 512, height = 512, color = '#000000
       height={height}
       alt="Logo"
     />
-  )
-}
+  );
+};
 
-export default Logo
+export default Logo;
+

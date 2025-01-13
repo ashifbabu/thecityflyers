@@ -42,3 +42,6 @@ body {
     flex-direction: row;
   }
 }
+.parent-container {
+  overflow: visible !important;
+}
