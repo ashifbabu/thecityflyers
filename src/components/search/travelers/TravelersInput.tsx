@@ -48,7 +48,7 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
     <div className="relative h-full">
       <button
         type="button"
-        className="bg-white dark:bg-black text-black dark:text-white p-4 shadow-sm cursor-pointer h-full w-full text-left border border-gray-300 dark:border-gray-700 rounded-md"
+        className="bg-white dark:bg-black text-black dark:text-white p-4 shadow-sm cursor-pointer h-full w-full text-left rounded-md"
         onClick={toggleModal}
       >
         <div className="text-sm text-gray-600 dark:text-gray-400">{value}</div>
@@ -59,7 +59,10 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
       </button>
 
       {isOpen && (
-        <div ref={modalRef} className="absolute z-10 w-full bg-white dark:bg-black text-black dark:text-white shadow-lg border border-gray-300 dark:border-gray-700 mt-2 py-4 rounded-md">
+        <div
+          ref={modalRef}
+          className="absolute z-10 w-full bg-white dark:bg-black text-black dark:text-white shadow-lg mt-2 py-4 rounded-md"
+        >
           <div className="px-4">
             <div className="space-y-4">
               <div>
@@ -69,7 +72,11 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
                     <button
                       key={num}
                       onClick={() => handleTravelerChange('adults', num)}
-                      className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${adults === num ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}
+                      className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
+                        adults === num
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                      }`}
                     >
                       {num}
                     </button>
@@ -83,7 +90,11 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
                     <button
                       key={num}
                       onClick={() => handleTravelerChange('children', num)}
-                      className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${children === num ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}
+                      className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
+                        children === num
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                      }`}
                     >
                       {num}
                     </button>
@@ -97,7 +108,11 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
                     <button
                       key={num}
                       onClick={() => handleTravelerChange('infants', num)}
-                      className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${infants === num ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}
+                      className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
+                        infants === num
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                      }`}
                     >
                       {num}
                     </button>
@@ -113,7 +128,11 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
                   <button
                     key={cls}
                     onClick={() => setTravelClass(cls)}
-                    className={`p-2 rounded-md border ${travelClass === cls ? 'bg-black dark:bg-white text-white dark:text-black' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}
+                    className={`p-2 rounded-md ${
+                      travelClass === cls
+                        ? 'bg-black dark:bg-white text-white dark:text-black'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                    }`}
                   >
                     {cls}
                   </button>

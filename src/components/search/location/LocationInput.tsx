@@ -1,4 +1,3 @@
-// LocationInput.tsx
 import React, { useState, useRef, useEffect } from 'react';
 
 interface Airport {
@@ -16,12 +15,12 @@ interface LocationInputProps {
   suggestions?: Airport[];
 }
 
-const LocationInput: React.FC<LocationInputProps> = ({ 
-  type, 
-  value, 
-  subValue, 
-  onChange, 
-  suggestions = [] 
+const LocationInput: React.FC<LocationInputProps> = ({
+  type,
+  value,
+  subValue,
+  onChange,
+  suggestions = []
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
@@ -53,8 +52,8 @@ const LocationInput: React.FC<LocationInputProps> = ({
         setInputValue(value);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [value]);
 
   const handleDisplayClick = () => {
@@ -87,30 +86,28 @@ const LocationInput: React.FC<LocationInputProps> = ({
   };
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative p-4" ref={containerRef}>
       {!isEditing ? (
         <div
           onClick={handleDisplayClick}
-          className="bg-white dark:bg-black text-black dark:text-white p-4 shadow-sm h-full border border-gray-300 dark:border-gray-700 cursor-pointer"
+          className="bg-white dark:bg-black text-black dark:text-white cursor-pointer"
         >
           <div className="text-sm text-gray-500 dark:text-gray-400 capitalize">
             {type === 'from' ? 'From' : 'To'}
           </div>
-          <div className="text-lg font-semibold">
-            {value}
-          </div>
+          <div className="text-lg font-semibold">{value}</div>
           <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
             {subValue}
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-black text-black dark:text-white p-4 shadow-sm border border-gray-300 dark:border-gray-700 rounded-md">
+        <div className="bg-white dark:bg-black text-black dark:text-white">
           <div className="text-sm text-gray-500 dark:text-gray-400 capitalize mb-2">
             {type === 'from' ? 'From' : 'To'}
           </div>
           <input
             type="text"
-            className="w-full py-2 px-3 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600 rounded-md"
+            className="w-full py-2 px-3 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600"
             placeholder="Type the airport name or airport code"
             value={inputValue}
             onChange={handleInputChange}
@@ -121,7 +118,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
             <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-64 overflow-auto z-50">
               <ul className="divide-y divide-gray-300 dark:divide-gray-700">
                 {filteredSuggestions.map((airport, index) => (
-                  <li 
+                  <li
                     key={index}
                     onClick={() => handleSuggestionClick(airport)}
                     className="p-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"

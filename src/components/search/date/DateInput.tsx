@@ -9,9 +9,10 @@ interface DateInputProps {
   value: string;
   subValue: string;
   onChange?: (newDate: Date) => void;
+  className?: string;
 }
 
-const DateInput: React.FC<DateInputProps> = ({ type, value, subValue, onChange }) => {
+const DateInput: React.FC<DateInputProps> = ({ type, value, subValue, onChange, className }) => {
   const { tripType } = useTripType();
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -51,9 +52,9 @@ const DateInput: React.FC<DateInputProps> = ({ type, value, subValue, onChange }
     : subValue;
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className={`relative ${className}`} ref={containerRef}>
       <div
-        className="bg-white text-black dark:bg-black dark:text-white p-4 shadow-sm cursor-pointer h-full border border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
+        className="bg-white text-black dark:bg-black dark:text-white p-4 shadow-sm cursor-pointer h-full hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
         onClick={handleClick}
       >
         <div className="text-sm text-gray-600 dark:text-gray-400">

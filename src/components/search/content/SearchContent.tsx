@@ -60,14 +60,18 @@ const SearchContent = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-1">
         {/* Location Selection */}
         <div className="lg:col-span-5">
-          <div className="relative grid grid-rows-2 gap-0 rounded-lg border border-gray-400 dark:border-gray-600 overflow-visible bg-white dark:bg-black">
-            <LocationInput
-              type="from"
-              value={fromCity}
-              subValue={fromAirport}
-              onChange={setFromCity}
-              suggestions={suggestions}
-            />
+          <div className="relative grid grid-rows-2 gap-0 rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
+            {/* From Section */}
+            <div className="border-b border-gray-300 dark:border-gray-600">
+              <LocationInput
+                type="from"
+                value={fromCity}
+                subValue={fromAirport}
+                onChange={setFromCity}
+                suggestions={suggestions}
+              />
+            </div>
+            {/* To Section */}
             <LocationInput
               type="to"
               value={toCity}
@@ -75,6 +79,7 @@ const SearchContent = () => {
               onChange={setToCity}
               suggestions={suggestions}
             />
+            {/* Swap Button */}
             <button
               type="button"
               onClick={swapLocations}
@@ -87,23 +92,24 @@ const SearchContent = () => {
                 "hover:bg-gray-200 dark:hover:bg-gray-800",
                 "focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-700",
                 "shadow-sm"
-              )}  
+              )}
             >
-              <ArrowsRightLeftIcon 
-                className="h-4 w-4 text-gray-600 dark:text-gray-300" 
+              <ArrowsRightLeftIcon
+                className="h-4 w-4 text-gray-600 dark:text-gray-300"
                 style={{ transform: 'rotate(90deg)' }}
               />
             </button>
           </div>
         </div>
-        
+
         {/* Date Selection */}
         <div className="lg:col-span-4">
-          <div className="grid grid-cols-2 gap-0 h-full rounded-lg border border-gray-400 dark:border-gray-600 overflow-visible bg-white dark:bg-black">
+          <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black rounded-lg border border-gray-400 dark:border-gray-600 overflow-hidden">
             <DateInput
               type="departure"
               value="Select date"
               subValue=""
+              className="border-r border-gray-300 dark:border-gray-600"
             />
             <DateInput
               type="return"
@@ -112,7 +118,8 @@ const SearchContent = () => {
             />
           </div>
         </div>
-        
+
+
         {/* Travelers Selection */}
         <div className="lg:col-span-3 rounded-lg border border-gray-400 dark:border-gray-600 overflow-visible bg-white dark:bg-black">
           <TravelersInput
