@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { MenuItemProps } from '@/types/menu';
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 
 interface ExtendedMenuItemProps extends MenuItemProps {
   isCollapsed?: boolean;
@@ -46,19 +46,32 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
       {children ? (
         <div
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer",
-            "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700", // Light mode: gray text, Dark mode: white text
-            isCollapsed ? "justify-center" : "justify-start"
+            'flex items-center px-3 py-2 rounded-lg transition-colors cursor-pointer',
+            'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
+            isCollapsed ? 'justify-center' : 'justify-between'
           )}
           onClick={toggleSubMenu}
         >
-          <div className="flex-shrink-0 text-gray-900 dark:text-white">{icon}</div> {/* Explicit icon color */}
-          {/* Always show label */}
-          <span className={cn("truncate", { "hidden lg:block": isCollapsed })}>{label}</span>
-          {/* Show submenu toggle icon when sidebar is expanded */}
-          {isCollapsed && (
-            <div className="ml-auto">
-              {isOpen ? <ChevronUpIcon className="h-5 w-5 text-gray-900 dark:text-white" /> : <ChevronDownIcon className="h-5 w-5 text-gray-900 dark:text-white" />}
+          <div className="flex items-center">
+            {/* Icon with fixed size for consistency */}
+            <div className="w-5 h-5 text-gray-900 dark:text-white">
+              {icon}
+            </div>
+            {/* Label */}
+            {!isCollapsed && (
+              <span className="ml-3 truncate">
+                {label}
+              </span>
+            )}
+          </div>
+          {/* Submenu toggle icon */}
+          {!isCollapsed && (
+            <div className="flex-shrink-0">
+              {isOpen ? (
+                <ChevronDownIcon className="w-5 h-5 text-gray-900 dark:text-white" />
+              ) : (
+                <ChevronRightIcon className="w-5 h-5 text-gray-900 dark:text-white" />
+              )}
             </div>
           )}
         </div>
@@ -67,15 +80,22 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
           href={href}
           passHref
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer",
-            "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700", // Light mode: gray text, Dark mode: white text
-            isCollapsed ? "justify-center" : "justify-start"
+            'flex items-center px-3 py-2 rounded-lg transition-colors cursor-pointer',
+            'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
+            isCollapsed ? 'justify-center' : 'justify-start'
           )}
           onClick={onClick}
         >
-          <div className="flex-shrink-0 text-gray-900 dark:text-white">{icon}</div> {/* Explicit icon color */}
-          {/* Always show label */}
-          <span className={cn("truncate", { "hidden lg:block": isCollapsed })}>{label}</span>
+          {/* Icon with fixed size for consistency */}
+          <div className="w-5 h-5 text-gray-900 dark:text-white">
+            {icon}
+          </div>
+          {/* Label */}
+          {!isCollapsed && (
+            <span className="ml-3 truncate">
+              {label}
+            </span>
+          )}
         </Link>
       )}
 
@@ -86,12 +106,17 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
             <Link
               key={child.href}
               href={child.href}
-              className="flex items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="flex items-center px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               onClick={onClick}
             >
-              <div className="flex-shrink-0">{child.icon}</div>
-              {/* Always show label for submenu items */}
-              <span className="truncate">{child.label}</span>
+              {/* Submenu item icon with fixed size */}
+              <div className="w-5 h-5">
+                {child.icon}
+              </div>
+              {/* Submenu item label */}
+              <span className="ml-3 truncate">
+                {child.label}
+              </span>
             </Link>
           ))}
         </div>
