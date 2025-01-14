@@ -40,7 +40,7 @@ const Sidebar = () => {
         id="sidebar"
         className={cn(
           "fixed top-0 left-0 z-40 h-screen transition-all duration-300",
-          "bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700",
+          "bg-white dark:bg-black border-r border-gray-200 dark:border-gray-700", // Light mode: white, Dark mode: black
           isCollapsed ? "w-16" : "w-64",
           "lg:sticky lg:top-16",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"

@@ -47,16 +47,18 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
         <div
           className={cn(
             "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer",
-            "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700",
+            "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700", // Light mode: gray text, Dark mode: white text
             isCollapsed ? "justify-center" : "justify-start"
           )}
           onClick={toggleSubMenu}
         >
-          <div className="flex-shrink-0">{icon}</div>
-          {!isCollapsed && <span className="truncate">{label}</span>}
-          {!isCollapsed && (
+          <div className="flex-shrink-0 text-gray-900 dark:text-white">{icon}</div> {/* Explicit icon color */}
+          {/* Always show label */}
+          <span className={cn("truncate", { "hidden lg:block": isCollapsed })}>{label}</span>
+          {/* Show submenu toggle icon when sidebar is expanded */}
+          {isCollapsed && (
             <div className="ml-auto">
-              {isOpen ? <ChevronUpIcon className="h-5 w-5" /> : <ChevronDownIcon className="h-5 w-5" />}
+              {isOpen ? <ChevronUpIcon className="h-5 w-5 text-gray-900 dark:text-white" /> : <ChevronDownIcon className="h-5 w-5 text-gray-900 dark:text-white" />}
             </div>
           )}
         </div>
@@ -66,13 +68,14 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
           passHref
           className={cn(
             "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer",
-            "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700",
+            "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700", // Light mode: gray text, Dark mode: white text
             isCollapsed ? "justify-center" : "justify-start"
           )}
           onClick={onClick}
         >
-          <div className="flex-shrink-0">{icon}</div>
-          {!isCollapsed && <span className="truncate">{label}</span>}
+          <div className="flex-shrink-0 text-gray-900 dark:text-white">{icon}</div> {/* Explicit icon color */}
+          {/* Always show label */}
+          <span className={cn("truncate", { "hidden lg:block": isCollapsed })}>{label}</span>
         </Link>
       )}
 
@@ -87,6 +90,7 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
               onClick={onClick}
             >
               <div className="flex-shrink-0">{child.icon}</div>
+              {/* Always show label for submenu items */}
               <span className="truncate">{child.label}</span>
             </Link>
           ))}
