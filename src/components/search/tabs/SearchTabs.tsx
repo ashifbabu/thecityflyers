@@ -23,14 +23,15 @@ const SearchTabs = () => {
           className={cn(
             "flex items-center justify-center gap-2 p-4",
             "text-sm font-medium transition-all",
-            "text-gray-600 dark:text-gray-400",
-            "hover:bg-gray-50 dark:hover:bg-gray-700/50",
+            "bg-white dark:bg-black", // Fully white for light mode, fully black for dark mode
             activeTab === id && [
-              "bg-gray-50 dark:bg-gray-700/50",
-              "border-b-2 border-gray-900 dark:border-gray-100"
-            ]
-          )}
-        >
+              "border-b-2",
+              "border-black dark:border-white",
+              "bg-gray-100 dark:bg-gray-900"
+            ],
+            "text-black dark:text-white", // Text color adapts to background
+            "hover:bg-gray-200 dark:hover:bg-gray-800" // Hover effect for interaction
+          )}>
           <Icon className="h-5 w-5" />
           <span className="hidden sm:inline">{label}</span>
         </button>
