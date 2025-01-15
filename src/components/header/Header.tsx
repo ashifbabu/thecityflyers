@@ -15,12 +15,12 @@ const Header = () => {
     const { isCollapsed } = useSidebar();
 
     return (
-        <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-gray-200 dark:border-none text-black dark:text-white"> {/* Key Change: bg-black and border removal */}
-            <div className="max-w-7xl mx-auto"> {/* Keep this for content centering */}
+        <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-gray-200 dark:border-none text-black dark:text-white">
+            <div className="max-w-7xl mx-auto">
                 <div className="flex items-center justify-between h-16 px-4 lg:px-8">
                     {/* Logo */}
-                    <div className="hidden lg:block flex-shrink-0">
-                        <Logo width={48} height={48} /> {/* No more color prop */}
+                    <div className="hidden lg:block flex-shrink-0" aria-label="Company Logo">
+                        <Logo width={48} height={48} />
                     </div>
 
                     {/* Mobile Menu & Search */}
@@ -39,10 +39,10 @@ const Header = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
-                        <LanguageIcon />
-                        <NotificationIcon />
-                        <ThemeIcon />
-                        <AuthButtons />
+                        <LanguageIcon aria-label="Select language" />
+                        <NotificationIcon aria-label="View notifications" />
+                        <ThemeIcon aria-label="Toggle theme" />
+                        <AuthButtons aria-label="User authentication options" />
                     </div>
                 </div>
             </div>

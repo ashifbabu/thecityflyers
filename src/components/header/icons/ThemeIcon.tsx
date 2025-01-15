@@ -14,11 +14,15 @@ const ThemeIcon = () => {
   }, []);
 
   if (!mounted) {
-    return <IconButton><div className="h-5 w-5" /></IconButton>;
+    // Provide an aria-label for the loading state
+    return <IconButton aria-label="Loading theme selector"><div className="h-5 w-5" /></IconButton>;
   }
 
   return (
-    <IconButton onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+    <IconButton 
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+    >
       {theme === 'dark' ? (
         <SunIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
       ) : (

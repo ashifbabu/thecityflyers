@@ -12,7 +12,7 @@ const MobileMenu = () => {
     <IconButton 
       onClick={toggleMobile} 
       className="lg:hidden" 
-      aria-label="Menu"
+      aria-label="Open navigation menu"  // Updated accessible name for clarity
     >
       <Bars3Icon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
     </IconButton>

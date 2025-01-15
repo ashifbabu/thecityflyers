@@ -16,12 +16,16 @@ const LanguageIcon = () => {
     <div className="relative" ref={ref}>
       <IconButton 
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Select language"
+        aria-label="Select language"  // Accessible name for the button
       >
         <GlobeAltIcon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
       </IconButton>
 
-      <LanguageDropdown isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <LanguageDropdown 
+        isOpen={isOpen} 
+        onClose={() => setIsOpen(false)} 
+        aria-label="Language selection dropdown"  // Accessible name for the dropdown
+      />
     </div>
   );
 };

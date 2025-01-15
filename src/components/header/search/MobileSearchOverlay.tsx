@@ -41,11 +41,12 @@ const MobileSearchOverlay = ({
               "placeholder-gray-500 dark:placeholder-gray-400" // Placeholder color
             )}
             autoFocus
+            aria-label="Search query"  // Adding accessible name for input
           />
           <IconButton 
             onClick={onClose}
             className="absolute right-2"
-            aria-label="Close search"
+            aria-label="Close search"  // Accessible name for the close button
           >
             <XMarkIcon className="h-5 w-5 text-gray-400" />
           </IconButton>

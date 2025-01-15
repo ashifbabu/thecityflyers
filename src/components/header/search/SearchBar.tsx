@@ -21,7 +21,7 @@ const SearchBar = () => {
       <div className="lg:hidden">
         <IconButton 
           onClick={() => setIsSearchOpen(true)}
-          aria-label="Search"
+          aria-label="Open search"
         >
           <MagnifyingGlassIcon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
         </IconButton>

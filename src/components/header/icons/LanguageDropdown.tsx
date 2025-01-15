@@ -35,6 +35,7 @@ const LanguageDropdown = ({ isOpen, onClose }: LanguageDropdownProps) => {
         "z-50 transform origin-top-right transition-all",
         "overflow-hidden"
       )}
+      aria-labelledby="language-dropdown"
     >
       <div className="py-1">
         {languages.map((language) => (
@@ -51,6 +52,7 @@ const LanguageDropdown = ({ isOpen, onClose }: LanguageDropdownProps) => {
               "hover:bg-gray-50 dark:hover:bg-gray-700",
               "transition-colors"
             )}
+            aria-label={`Select ${language.name} (${language.flag})`}  // Accessible name for each button
           >
             <span className="text-xl">{language.flag}</span>
             <span>{language.name}</span>

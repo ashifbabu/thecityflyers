@@ -18,7 +18,11 @@ const NotificationIcon = () => {
         <span className="absolute top-0.5 right-0.5 h-2.5 w-2.5 bg-red-500 rounded-full" />
       </IconButton>
 
-      <NotificationDropdown isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <NotificationDropdown 
+        isOpen={isOpen} 
+        onClose={() => setIsOpen(false)} 
+        aria-label="Notification dropdown" // Accessible name for the dropdown
+      />
     </div>
   );
 };

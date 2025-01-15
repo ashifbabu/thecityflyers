@@ -17,15 +17,16 @@ const ThemeToggle = () => {
 
   return (
     <button
-      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-      aria-label="Toggle theme"
-    >
-      {resolvedTheme === 'dark' ? (
-        <SunIcon className="h-6 w-6 text-yellow-400" />
-      ) : (
-        <MoonIcon className="h-6 w-6 text-gray-900" />
-      )}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+          aria-label={resolvedTheme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
+          title={resolvedTheme === 'dark' ? "Switch to light mode" : "Switch to dark mode"} // Tooltip for better UX
+        >
+          {resolvedTheme === 'dark' ? (
+            <SunIcon className="h-6 w-6 text-yellow-400" aria-hidden="true" />
+          ) : (
+            <MoonIcon className="h-6 w-6 text-gray-900" aria-hidden="true" />
+          )}
     </button>
   );
 };

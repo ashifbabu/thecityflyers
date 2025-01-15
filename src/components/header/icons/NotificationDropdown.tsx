@@ -47,9 +47,17 @@ const NotificationDropdown = ({ isOpen, onClose }: NotificationDropdownProps) =>
         "z-50 transform origin-top-right transition-all",
         "overflow-hidden"
       )}
+      role="dialog"
+      aria-labelledby="notification-dropdown-title"
+      aria-describedby="notification-dropdown-description"
     >
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
+        <h3 id="notification-dropdown-title" className="text-lg font-semibold text-gray-900 dark:text-white">
+          Notifications
+        </h3>
+        <p id="notification-dropdown-description" className="sr-only">
+          You have {notifications.length} new notifications.
+        </p>
       </div>
       
       <div className="overflow-y-auto max-h-[400px] divide-y divide-gray-200 dark:divide-gray-700">
@@ -57,11 +65,14 @@ const NotificationDropdown = ({ isOpen, onClose }: NotificationDropdownProps) =>
           <div 
             key={notification.id}
             className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+            role="listitem"
+            aria-labelledby={`notification-${notification.id}-title`}
+            aria-describedby={`notification-${notification.id}-message`}
           >
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+            <h4 id={`notification-${notification.id}-title`} className="text-sm font-medium text-gray-900 dark:text-white">
               {notification.title}
             </h4>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p id={`notification-${notification.id}-message`} className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {notification.message}
             </p>
             <span className="mt-2 text-xs text-gray-400 dark:text-gray-500">

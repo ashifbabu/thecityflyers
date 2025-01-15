@@ -81,23 +81,24 @@ const SearchContent = () => {
             />
             {/* Swap Button */}
             <button
-              type="button"
-              onClick={swapLocations}
-              className={cn(
-                "absolute right-20 top-1/2 translate-x-1/2 -translate-y-1/2 z-10 rounded-full",
-                "w-8 h-8",
-                "bg-white dark:bg-black",
-                "border border-gray-400 dark:border-gray-600",
-                "flex items-center justify-center",
-                "hover:bg-gray-200 dark:hover:bg-gray-800",
-                "focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-700",
-                "shadow-sm"
-              )}
-            >
-              <ArrowsRightLeftIcon
-                className="h-4 w-4 text-gray-600 dark:text-gray-300"
-                style={{ transform: 'rotate(90deg)' }}
-              />
+                  type="button"
+                  onClick={swapLocations}
+                  aria-label="Swap locations"
+                  className={cn(
+                    "absolute right-20 top-1/2 translate-x-1/2 -translate-y-1/2 z-10 rounded-full",
+                    "w-8 h-8",
+                    "bg-white dark:bg-black",
+                    "border border-gray-400 dark:border-gray-600",
+                    "flex items-center justify-center",
+                    "hover:bg-gray-200 dark:hover:bg-gray-800",
+                    "focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-700",
+                    "shadow-sm"
+                  )}
+                >
+                  <ArrowsRightLeftIcon
+                    className="h-4 w-4 text-gray-600 dark:text-gray-300"
+                    style={{ transform: 'rotate(90deg)' }}
+                  />
             </button>
           </div>
         </div>

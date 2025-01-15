@@ -5,19 +5,19 @@ interface IconButtonProps {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
-  'aria-label'?: string;
+  'aria-label': string; // Ensures accessibility
 }
 
-const IconButton = ({ 
+const IconButton: React.FC<IconButtonProps> = ({ 
   children, 
   className, 
   onClick, 
   'aria-label': ariaLabel 
-}: IconButtonProps) => {
+}) => {
   return (
     <button 
       onClick={onClick}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel} 
       className={cn(
         "p-2 rounded-full transition-colors",
         "hover:bg-gray-100 dark:hover:bg-gray-700",
