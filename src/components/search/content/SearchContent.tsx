@@ -64,20 +64,26 @@ const SearchContent = () => {
             {/* From Section */}
             <div className="border-b border-gray-300 dark:border-gray-600">
               <LocationInput
-                type="from"
-                value={fromCity}
-                subValue={fromAirport}
-                onChange={setFromCity}
-                suggestions={suggestions}
+                 type="from"
+  value={fromCity}
+  subValue={fromAirport}
+  onChange={(city, airportName) => {
+    setFromCity(city);
+    setFromAirport(airportName);
+  }}
+                
               />
             </div>
             {/* To Section */}
             <LocationInput
-              type="to"
-              value={toCity}
-              subValue={toAirport}
-              onChange={setToCity}
-              suggestions={suggestions}
+             type="to"
+  value={toCity}
+  subValue={toAirport}
+  onChange={(city, airportName) => {
+    setToCity(city);
+    setToAirport(airportName);
+  }}
+              
             />
             {/* Swap Button */}
             <button

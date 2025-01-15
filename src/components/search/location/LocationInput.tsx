@@ -11,8 +11,7 @@ interface LocationInputProps {
   type: 'from' | 'to';
   value: string;
   subValue: string;
-  onChange: (value: string) => void;
-  suggestions?: Airport[];
+  onChange: (city: string, airportName: string) => void;
 }
 
 const LocationInput: React.FC<LocationInputProps> = ({
@@ -20,31 +19,37 @@ const LocationInput: React.FC<LocationInputProps> = ({
   value,
   subValue,
   onChange,
-  suggestions = []
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [filteredSuggestions, setFilteredSuggestions] = useState<Airport[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isEditing) {
-      const query = inputValue.trim().toLowerCase();
-      if (query.length > 0) {
-        const filtered = suggestions.filter((sug) =>
-          sug.city.toLowerCase().includes(query) ||
-          sug.airportName.toLowerCase().includes(query) ||
-          sug.code.toLowerCase().includes(query)
-        );
-        setFilteredSuggestions(filtered);
-      } else {
-        setFilteredSuggestions(suggestions);
-      }
-    } else {
-      setFilteredSuggestions([]);
-    }
-  }, [inputValue, isEditing, suggestions]);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+  // 🔍 Fetch suggestions from the API
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (inputValue.trim().length > 0) {
+        try {
+          const response = await fetch(`${API_URL}/api/airports/?query=${inputValue}`);
+          const data: Airport[] = await response.json();
+          setFilteredSuggestions(data);
+        } catch (error) {
+          console.error('Error fetching airport suggestions:', error);
+        }
+      } else {
+        setFilteredSuggestions([]);
+      }
+    };
+
+    if (isEditing) {
+      const debounceTimeout = setTimeout(() => fetchSuggestions(), 300); // Debounce API call
+      return () => clearTimeout(debounceTimeout);
+    }
+  }, [inputValue, isEditing, API_URL]);
+
+  // Handle click outside to close the dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -65,24 +70,11 @@ const LocationInput: React.FC<LocationInputProps> = ({
     setInputValue(e.target.value);
   };
 
+  // ✅ Update this function to pass the correct airport details
   const handleSuggestionClick = (airport: Airport) => {
-    onChange(airport.city);
+    onChange(airport.city, airport.airportName);
     setInputValue(airport.city);
     setIsEditing(false);
-  };
-
-  const handleInputBlur = () => {
-    if (inputValue.trim() === '') {
-      setInputValue(value);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      const finalValue = inputValue.trim() || value;
-      onChange(finalValue);
-      setIsEditing(false);
-    }
   };
 
   return (
@@ -111,8 +103,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
             placeholder="Type the airport name or airport code"
             value={inputValue}
             onChange={handleInputChange}
-            onBlur={handleInputBlur}
-            onKeyDown={handleKeyDown}
           />
           {filteredSuggestions.length > 0 && (
             <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-64 overflow-auto z-50">
