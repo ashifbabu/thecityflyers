@@ -13,7 +13,10 @@ const AuthButtons = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <IconButton onClick={() => setIsOpen(!isOpen)}>
+      <IconButton 
+        onClick={() => setIsOpen(!isOpen)} 
+        aria-label="Toggle user menu" // Added aria-label
+      >
         <UserCircleIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
       </IconButton>
 
