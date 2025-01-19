@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import SearchTabs from './tabs/SearchTabs';
+import SearchTabs from '@/components/tabs/SearchTabs';
 
 const FlightSearchForm = () => {
   const handleSearch = (e: React.FormEvent) => {
