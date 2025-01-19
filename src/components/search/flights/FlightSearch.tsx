@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import SearchTabs from './tabs/SearchTabs';
+import SearchTabs from '@/components/tabs/SearchTabs';
 import TripTypeSelector from './trip/TripTypeSelector';
 import PassengerSelector from './passenger/PassengerSelector';
 import FareTypeSelector from './fare/FareTypeSelector';
