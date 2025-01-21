@@ -31,7 +31,10 @@ const SearchTabs = () => {
             ],
             "text-black dark:text-white", // Text color adapts to background
             "hover:bg-gray-200 dark:hover:bg-gray-800" // Hover effect for interaction
-          )}>
+          )}
+          aria-label={label} // Add accessible name
+          title={label} // Optional tooltip for better UX
+        >
           <Icon className="h-5 w-5" />
           <span className="hidden sm:inline">{label}</span>
         </button>

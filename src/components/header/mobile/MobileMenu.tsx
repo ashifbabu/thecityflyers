@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 import { Bars3Icon } from '@heroicons/react/24/outline';
@@ -9,10 +9,10 @@ const MobileMenu = () => {
   const { toggleMobile } = useSidebar();
 
   return (
-    <IconButton 
-      onClick={toggleMobile} 
-      className="lg:hidden" 
-      aria-label="Open navigation menu"  // Updated accessible name for clarity
+    <IconButton
+      onClick={toggleMobile}
+      className="lg:hidden header-menu-icon" // Added specific class for the header
+      aria-label="Open navigation menu" // This ensures accessibility
     >
       <Bars3Icon className="h-6 w-6 text-gray-700 dark:text-gray-300" />
     </IconButton>
@@ -20,3 +20,5 @@ const MobileMenu = () => {
 };
 
 export default MobileMenu;
+
+

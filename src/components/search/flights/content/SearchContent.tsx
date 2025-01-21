@@ -106,26 +106,30 @@ const SearchContent = () => {
             </button>
           </div>
         </div>
-
-          {/* Date Selection */}
-          <div className="lg:col-span-4">
-            <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black rounded-lg border border-gray-400 dark:border-gray-600">
+        {/* Date Selection */}
+        <div className="lg:col-span-4">
+          <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black border border-gray-400 dark:border-gray-600 rounded-lg overflow-visible">
+            {/* Departure Box */}
+            <div className="border-r border-gray-400 dark:border-gray-600">
               <DateInput
                 type="departure"
                 value="Select date"
                 subValue=""
-                className="border-r border-gray-300 dark:border-gray-600 rounded-l-lg"
+                className="rounded-none"
               />
-              <DateInput 
-                type="return" 
-                value="Select date" 
-                subValue="" 
-                className="rounded-r-lg"
+            </div>
+
+            {/* Return Box */}
+            <div>
+              <DateInput
+                type="return"
+                value="Select date"
+                subValue=""
+                className="rounded-none"
               />
             </div>
           </div>
-
-
+        </div>
 
         {/* Travelers Selection */}
         <div className="lg:col-span-3 rounded-lg border border-gray-400 dark:border-gray-600 overflow-visible bg-white dark:bg-black">

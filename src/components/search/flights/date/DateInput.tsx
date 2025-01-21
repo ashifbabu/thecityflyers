@@ -76,26 +76,28 @@ const DateInput: React.FC<DateInputProps> = ({
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
-      <div
-        className={cn(
-          'bg-white dark:bg-black text-black dark:text-white p-4',
-          'shadow-sm cursor-pointer h-full',
-          'hover:bg-gray-50 dark:hover:bg-gray-900',
-          'transition-colors duration-200'
-        )}
-        onClick={handleClick}
-      >
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          {type === 'departure' ? 'Departure' : 'Return'}
+        <div
+          className={cn(
+            'bg-white dark:bg-black text-black dark:text-white p-4',
+            'shadow-sm cursor-pointer h-full',
+            'hover:bg-gray-50 dark:hover:bg-gray-900',
+            'transition-colors duration-200',
+            'rounded-lg' // Adds border radius to the parent div
+          )}
+          onClick={handleClick}
+        >
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {type === 'departure' ? 'Departure' : 'Return'}
+          </div>
+          <div className="text-lg font-semibold">{formattedDate}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">{weekday}</div>
+          {showCalendar ? (
+            <ChevronUpIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
+          ) : (
+            <ChevronDownIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
+          )}
         </div>
-        <div className="text-lg font-semibold">{formattedDate}</div>
-        <div className="text-sm text-gray-600 dark:text-gray-400">{weekday}</div>
-        {showCalendar ? (
-          <ChevronUpIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
-        ) : (
-          <ChevronDownIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
-        )}
-      </div>
+
 
       {showCalendar && (
         <div
@@ -114,7 +116,7 @@ const DateInput: React.FC<DateInputProps> = ({
             right: type === 'departure' ? 'auto' : 0,
             margin: type === 'return' ? '0 0 0 auto' : '0 auto 0 0',
             transform: 'translateX(0)',
-            overflow: 'visible',
+            overflow: 'visible', // Ensures the popup isn't clipped
           }}
         >
           <DayPicker
@@ -161,34 +163,6 @@ const DateInput: React.FC<DateInputProps> = ({
               day_today: 'bg-gray-100 dark:bg-gray-800',
               day_disabled: 'text-gray-400 dark:text-gray-600 hover:bg-transparent',
               day_outside: 'opacity-50',
-            }}
-            components={{
-              Caption: ({ displayMonth }) => (
-                <div className="flex justify-between items-center">
-                  <button
-                    type="button"
-                    aria-label="Previous Month"
-                    className="nav_button"
-                    onClick={() => console.log('Go to previous month')}
-                  >
-                    Prev
-                  </button>
-                  <span aria-live="polite">
-                    {displayMonth.toLocaleDateString('en-US', {
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label="Next Month"
-                    className="nav_button"
-                    onClick={() => console.log('Go to next month')}
-                  >
-                    Next
-                  </button>
-                </div>
-              ),
             }}
           />
         </div>
