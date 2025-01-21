@@ -109,7 +109,7 @@ const SearchContent = () => {
 
           {/* Date Selection */}
           <div className="lg:col-span-4">
-            <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black rounded-lg border border-gray-400 dark:border-gray-600 overflow-hidden">
+            <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black rounded-lg border border-gray-400 dark:border-gray-600">
               <DateInput
                 type="departure"
                 value="Select date"

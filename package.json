@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@geist-ui/core": "^2.3.8",
+    "@geist-ui/icons": "^1.0.2",
     "@geist-ui/react": "^2.2.5",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.9.0",

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-
+import ChevronDown from '@geist-ui/icons/chevronDown';
 interface TravelersInputProps {
   value: string;
   subValue: string;
@@ -56,6 +56,10 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
           {adults + children + infants} Travelers
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-400">{subValue}</div>
+          {/* ChevronDown Icon */}
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
+              <ChevronDown size={20} />
+            </div>
       </button>
 
       {isOpen && (
