@@ -45,3 +45,9 @@ body {
 .parent-container {
   overflow: visible !important;
 }
+
+.radio-group-horizontal {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+}

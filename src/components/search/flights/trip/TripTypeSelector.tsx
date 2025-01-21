@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React, { useState } from 'react';
+import { Radio } from '@geist-ui/core';
 
 const tripTypes = [
   { id: 'oneWay', label: 'One Way' },
@@ -10,36 +10,20 @@ const tripTypes = [
 ];
 
 const TripTypeSelector = () => {
-  const [selected, setSelected] = React.useState('oneWay');
+  const [selected, setSelected] = useState('oneWay');
 
   return (
-    <div className="flex gap-4">
+    <Radio.Group
+      className="radio-group-horizontal"
+      value={selected}
+      onChange={(val) => setSelected(val as string)}
+    >
       {tripTypes.map(({ id, label }) => (
-        <button
-          key={id}
-          onClick={() => setSelected(id)}
-          className={cn(
-            "flex items-center gap-2",
-            "text-sm font-medium",
-            selected === id ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"
-          )}
-        >
-          <div className={cn(
-            "w-4 h-4 rounded-full border-2",
-            "flex items-center justify-center",
-            selected === id ? [
-              "border-blue-600 dark:border-blue-400",
-              "bg-blue-600 dark:bg-blue-400"
-            ] : "border-gray-400 dark:border-gray-600"
-          )}>
-            {selected === id && (
-              <div className="w-2 h-2 rounded-full bg-white" />
-            )}
-          </div>
+        <Radio key={id} value={id}>
           {label}
-        </button>
+        </Radio>
       ))}
-    </div>
+    </Radio.Group>
   );
 };
 
