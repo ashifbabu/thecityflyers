@@ -1,13 +1,13 @@
+'use client';
+
 import React, { useState, lazy, Suspense } from 'react';
 import { PlusCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import LocationInput from '../location/LocationInput';
 import DateInput from '../date/DateInput';
 import TravelersInput from '../travelers/TravelersInput';
 import SearchButton from '../button/SearchButton';
-import TripTypes from '../trip/TripTypes';
-import FareTypes from '../fare/FareTypes';
+import type { FlightSearchError } from '@/types/flight';
 
 interface Flight {
   id: number;
@@ -37,19 +37,10 @@ const MultiCityContent = () => {
       departureDate: undefined,
     },
   ]);
-  
-  const swapLocations = () => {
-    setFlights(flights.map(flight => ({
-      ...flight,
-      fromCity: flight.toCity,
-      fromAirport: flight.toAirport,
-      toCity: flight.fromCity,
-      toAirport: flight.fromAirport,
-    })));
-  };
+  const [errors, setErrors] = useState<FlightSearchError[]>([]);
 
   const handleAddFlight = () => {
-    if (flights.length < 6) {
+    if (flights.length < 6) { // Maximum 6 flights
       setFlights([
         ...flights,
         {
@@ -65,42 +56,52 @@ const MultiCityContent = () => {
   };
 
   const handleRemoveFlight = (id: number) => {
-    if (flights.length > 2) {
-      setFlights(flights.filter((flight) => flight.id !== id));
+    if (flights.length > 2) { // Minimum 2 flights
+      setFlights(flights.filter(flight => flight.id !== id));
     }
   };
 
   const updateFlight = (id: number, updates: Partial<Flight>) => {
-    setFlights(
-      flights.map((flight) =>
-        flight.id === id ? { ...flight, ...updates } : flight
-      )
-    );
+    setFlights(flights.map(flight => 
+      flight.id === id ? { ...flight, ...updates } : flight
+    ));
+  };
+
+  const handleSearchErrors = (searchErrors: FlightSearchError[]) => {
+    setErrors(searchErrors);
+    setTimeout(() => setErrors([]), 5000);
   };
 
   return (
     <div className="w-full bg-white dark:bg-black p-6 space-y-6">
-      <Suspense fallback={<div className="h-8" />}>
-        <TripTypes />
-      </Suspense>
+      {/* Error Messages */}
+      {errors.length > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <ul className="list-disc list-inside space-y-1">
+            {errors.map((error, index) => (
+              <li key={index} className="text-red-600 dark:text-red-400 text-sm">
+                {error.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
+      {/* Flight Segments */}
       <div className="space-y-4">
         {flights.map((flight, index) => (
-          <div
+          <div 
             key={flight.id}
             className={cn(
-              'grid grid-cols-1 lg:grid-cols-12 gap-4',
-              'p-4 rounded-lg',
-              'border border-gray-200 dark:border-gray-700'
+              "grid grid-cols-1 lg:grid-cols-12 gap-4",
+              "p-4 rounded-lg",
+              "border border-gray-200 dark:border-gray-700"
             )}
           >
-        {/* Location Selection */}
-        <div className="lg:col-span-5">
-          <div className="relative grid grid-rows-2 gap-0 rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
-            <Suspense fallback={<div className="h-24" />}>
-              {/* From Section */}
-              <div className="border-b border-gray-300 dark:border-gray-600">
-                <LocationInput
+            <div className="lg:col-span-5">
+              <div className="grid grid-rows-2 gap-0 rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
+                <div className="border-b border-gray-300 dark:border-gray-600">
+                  <LocationInput
                     type="from"
                     value={flight.fromCity}
                     subValue={flight.fromAirport}
@@ -110,10 +111,9 @@ const MultiCityContent = () => {
                         fromAirport: airportName,
                       });
                     }}
-                />
-              </div>
-              {/* To Section */}
-              <LocationInput
+                  />
+                </div>
+                <LocationInput
                   type="to"
                   value={flight.toCity}
                   subValue={flight.toAirport}
@@ -123,43 +123,21 @@ const MultiCityContent = () => {
                       toAirport: airportName,
                     });
                   }}
-              />
-            </Suspense>
-            {/* Swap Button */}
-            <button
-              type="button"
-              onClick={swapLocations}
-              aria-label="Swap locations"
-              className={cn(
-                'absolute right-20 top-1/2 translate-x-1/2 -translate-y-1/2 z-10 rounded-full',
-                'w-8 h-8',
-                'bg-white dark:bg-black',
-                'border border-gray-400 dark:border-gray-600',
-                'flex items-center justify-center',
-                'hover:bg-gray-200 dark:hover:bg-gray-800',
-                'focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-700',
-                'shadow-sm'
-              )}
-            >
-              <ArrowsRightLeftIcon
-                className="h-4 w-4 text-gray-600 dark:text-gray-300"
-                style={{ transform: 'rotate(90deg)' }}
-              />
-            </button>
-          </div>
-        </div>
+                />
+              </div>
+            </div>
 
             <div className="lg:col-span-4">
               <div className="h-full bg-white dark:bg-black rounded-lg border border-gray-400 dark:border-gray-600">
-                <DateInput
-                  type="departure"
-                  value="Select date"
-                  subValue=""
-                  selectedDate={flight.departureDate} // Updated to match `DateInput` prop
-                  onDateSelect={(type, date) => {
-                    updateFlight(flight.id, { departureDate: date });
-                  }}
-                />
+              <DateInput
+                type="departure"
+                value="Select date"
+                subValue=""
+                selectedDate={flight.departureDate} // Updated from selectedDeparture to selectedDate
+                onDateSelect={(type, date) => {
+                  updateFlight(flight.id, { departureDate: date });
+                }}
+              />
               </div>
             </div>
 
@@ -188,31 +166,34 @@ const MultiCityContent = () => {
         ))}
       </div>
 
+      {/* Add City Button and Counter */}
       <div className="flex justify-between items-center">
         <button
           onClick={handleAddFlight}
           disabled={flights.length >= 6}
           className={cn(
-            'flex items-center gap-2 px-4 py-2 rounded-md',
-            'text-sm font-medium',
+            "flex items-center gap-2 px-4 py-2 rounded-md",
+            "text-sm font-medium",
             flights.length >= 6
-              ? 'text-gray-400 cursor-not-allowed'
-              : 'text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
           )}
         >
           <PlusCircleIcon className="h-5 w-5" />
           <span>Add city</span>
         </button>
 
-        <div className="text-sm text-gray-500">{flights.length}/6 flights</div>
+        <div className="text-sm text-gray-500">
+          {flights.length}/6 flights
+        </div>
       </div>
 
-      <Suspense fallback={<div className="h-12" />}>
-        <FareTypes />
-      </Suspense>
-
+      {/* Search Button */}
       <div className="flex justify-center w-full">
-        <SearchButton />
+        <SearchButton 
+          searchData={{ flights }}
+          onError={handleSearchErrors}
+        />
       </div>
     </div>
   );

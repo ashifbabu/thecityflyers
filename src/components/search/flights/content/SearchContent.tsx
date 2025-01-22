@@ -4,6 +4,7 @@ import React, { useState, lazy, Suspense } from 'react';
 import { ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { useTripType } from '@/hooks/use-trip-type';
+import type { FlightSearchError } from '@/types/flight';
 
 // Lazy load components
 const TripTypes = lazy(() => import('../trip/TripTypes'));
@@ -21,14 +22,15 @@ interface Airport {
   code: string;
 }
 
-const SearchContent = () => {
+const SearchContent: React.FC = () => {
   const [fromCity, setFromCity] = useState('Dhaka');
   const [fromAirport, setFromAirport] = useState('Hazrat Shahjalal International Airport');
   const [toCity, setToCity] = useState('Chittagong');
   const [toAirport, setToAirport] = useState('Shah Amanat International');
   const [departureDateState, setDepartureDateState] = useState<Date | undefined>(undefined);
   const [returnDateState, setReturnDateState] = useState<Date | undefined>(undefined);
-
+  const [travelers, setTravelers] = useState(1);
+  const [errors, setErrors] = useState<FlightSearchError[]>([]);
   const { tripType } = useTripType();
 
   const swapLocations = () => {
@@ -49,6 +51,19 @@ const SearchContent = () => {
     }
   };
 
+  const handleSearchErrors = (searchErrors: FlightSearchError[]) => {
+    setErrors(searchErrors);
+    setTimeout(() => setErrors([]), 5000); // Clear errors after 5 seconds
+  };
+
+  const searchData = {
+    fromCity,
+    toCity,
+    departureDate: departureDateState,
+    returnDate: returnDateState,
+    travelers,
+  };
+
   if (tripType === 'multiCity') {
     return (
       <Suspense fallback={<div className="h-96" />}>
@@ -59,6 +74,16 @@ const SearchContent = () => {
 
   return (
     <div className="w-full bg-white dark:bg-black p-6 space-y-6">
+      {errors.length > 0 && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+          <ul>
+            {errors.map((error, index) => (
+              <li key={index}>{error.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <Suspense fallback={<div className="h-8" />}>
         <TripTypes />
       </Suspense>
@@ -114,38 +139,43 @@ const SearchContent = () => {
             </button>
           </div>
         </div>
-        {/* Date Selection */}
-        <div className="lg:col-span-4">
-          <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black border border-gray-400 dark:border-gray-600 rounded-lg overflow-visible">
-            <Suspense fallback={<div className="h-24" />}>
-              {/* Departure Box */}
-              <div className="border-r border-gray-400 dark:border-gray-600">
-                <DateInput
-                  type="departure"
-                  value="Select date"
-                  subValue=""
-                  className="rounded-none"
-                />
-              </div>
 
-              {/* Return Box */}
-              <div>
-                <DateInput
-                  type="return"
-                  value="Select date"
-                  subValue=""
-                  className="rounded-none"
-                />
-              </div>
-            </Suspense>
+          {/* Date Selection */}
+          <div className="lg:col-span-4">
+            <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black border border-gray-400 dark:border-gray-600 rounded-lg overflow-visible">
+              <Suspense fallback={<div className="h-24" />}>
+                {/* Departure DateInput */}
+                <div className="border-r border-gray-400 dark:border-gray-600">
+                  <DateInput
+                    type="departure"
+                    value={departureDateState ? departureDateState.toISOString().slice(0, 10) : 'Select date'} // Ensure value is a string
+                    subValue=""
+                    selectedDate={departureDateState}
+                    onDateSelect={(type, date) => handleDateSelect(type, date)} // Pass the correct type and date
+                  />
+                </div>
+
+                {/* Return DateInput */}
+                <div>
+                  <DateInput
+                    type="return"
+                    value={returnDateState ? returnDateState.toISOString().slice(0, 10) : 'Select date'} // Ensure value is a string
+                    subValue=""
+                    selectedDate={returnDateState}
+                    onDateSelect={(type, date) => handleDateSelect(type, date)} // Pass the correct type and date
+                    departureDate={departureDateState}
+                  />
+                </div>
+              </Suspense>
+            </div>
           </div>
-        </div>
+
 
         {/* Travelers Selection */}
         <div className="lg:col-span-3 rounded-lg border border-gray-400 dark:border-gray-600 overflow-visible bg-white dark:bg-black">
           <Suspense fallback={<div className="h-24" />}>
             <TravelersInput
-              value="1 Traveler"
+              value={`${travelers} Traveler${travelers > 1 ? 's' : ''}`}
               subValue="Economy"
               onClick={() => console.log('Open travelers modal')}
             />
@@ -159,7 +189,7 @@ const SearchContent = () => {
 
       <div className="flex justify-center w-full">
         <Suspense fallback={<div className="h-12" />}>
-          <SearchButton />
+          <SearchButton searchData={searchData} onError={handleSearchErrors} />
         </Suspense>
       </div>
     </div>

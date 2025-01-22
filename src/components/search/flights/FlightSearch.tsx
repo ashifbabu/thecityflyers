@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import SearchTabs from '@/components/tabs/SearchTabs';
 import TripTypeSelector from './trip/TripTypeSelector';
@@ -9,6 +9,17 @@ import FareTypeSelector from './fare/FareTypeSelector';
 import SearchButton from './button/SearchButton';
 
 const FlightSearch = () => {
+  // Define searchData state
+  const [searchData, setSearchData] = useState({
+    fromCity: '',
+    toCity: '',
+    departureDate: undefined as Date | undefined,
+    returnDate: undefined as Date | undefined,
+    travelers: 1,
+    fareType: 'economy',
+    flights: [],
+  });
+
   return (
     <div className="w-full max-w-7xl mx-auto p-6">
       <div
@@ -37,7 +48,7 @@ const FlightSearch = () => {
 
           {/* Search Button */}
           <div className="mt-6 flex justify-center">
-            <SearchButton />
+            <SearchButton searchData={searchData} />
           </div>
         </div>
       </div>
