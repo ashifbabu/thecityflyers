@@ -17,22 +17,22 @@ interface SearchButtonProps {
     travelers?: number;
     flights?: any[];
   };
+  buttonText?: string;
 }
 
-const SearchButton = ({ onError, searchData }: SearchButtonProps) => {
+const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButtonProps) => {
   const router = useRouter();
   const { tripType } = useTripType();
 
   const handleSearch = () => {
-    console.log('Search button clicked'); // Debug log
+    console.log('Search button clicked');
     console.log('Search Data:', searchData);
 
     // Validate search data
     const validationErrors = validateFlightSearch(tripType, searchData);
-    console.log('Validation Errors:', validationErrors); // Debug log
+    console.log('Validation Errors:', validationErrors);
 
     if (validationErrors.length > 0) {
-      // If validation errors exist, call the onError callback
       if (onError) {
         onError(validationErrors);
       }
@@ -71,7 +71,7 @@ const SearchButton = ({ onError, searchData }: SearchButtonProps) => {
         'dark:bg-white dark:text-black dark:hover:bg-gray-100'
       )}
     >
-      Search
+      {buttonText}
     </button>
   );
 };
