@@ -10,7 +10,9 @@ interface DateInputProps {
   type: 'departure' | 'return';
   value: string;
   subValue: string;
-  onChange?: (newDate: Date) => void;
+  selectedDate?: Date;
+  onDateSelect?: (type: 'departure' | 'return', date: Date) => void;
+  onChange?: (date: Date) => void; // Add onChange here
   className?: string;
   departureDate?: Date;
 }
@@ -19,13 +21,13 @@ const DateInput: React.FC<DateInputProps> = ({
   type,
   value,
   subValue,
-  onChange,
+  onDateSelect, // Use onDateSelect only
   className,
+  selectedDate,
   departureDate,
 }) => {
   const { tripType } = useTripType();
   const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const today = startOfDay(new Date());
@@ -42,20 +44,13 @@ const DateInput: React.FC<DateInputProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleClick = () => {
-    setShowCalendar((prev) => !prev);
-  };
-
   const handleDayClick: SelectSingleEventHandler = (day) => {
     if (!day) return;
 
     if (isBefore(day, minSelectableDate)) return;
 
-    if (type === 'return' && departureDate && isBefore(day, departureDate)) return;
-
-    setSelectedDate(day);
     setShowCalendar(false);
-    onChange?.(day);
+    onDateSelect?.(type, day); // Call the onDateSelect prop
   };
 
   const disabledDays = {
@@ -76,6 +71,7 @@ const DateInput: React.FC<DateInputProps> = ({
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
+      {/* Render UI */}
       <div
         className={cn(
           'bg-white dark:bg-black text-black dark:text-white p-4',
@@ -83,7 +79,7 @@ const DateInput: React.FC<DateInputProps> = ({
           'hover:bg-gray-50 dark:hover:bg-gray-900',
           'transition-colors duration-200'
         )}
-        onClick={handleClick}
+        onClick={() => setShowCalendar((prev) => !prev)}
       >
         <div className="text-sm text-gray-600 dark:text-gray-400">
           {type === 'departure' ? 'Departure' : 'Return'}
@@ -111,10 +107,8 @@ const DateInput: React.FC<DateInputProps> = ({
             position: 'absolute',
             top: '100%',
             left: type === 'return' ? 'auto' : 0,
-            right: type === 'departure' ? 'auto' : 0,
+            right: type === 'return' ? 0 : 'auto',
             margin: type === 'return' ? '0 0 0 auto' : '0 auto 0 0',
-            transform: 'translateX(0)',
-            overflow: 'visible',
           }}
         >
           <DayPicker
@@ -124,72 +118,6 @@ const DateInput: React.FC<DateInputProps> = ({
             disabled={disabledDays}
             numberOfMonths={numberOfMonths}
             showOutsideDays={false}
-            classNames={{
-              months: 'flex flex-col md:flex-row space-y-4 md:space-x-4 md:space-y-0',
-              month: 'w-full md:w-[280px]',
-              caption: 'flex justify-between items-center h-10 mb-4',
-              caption_label: 'text-sm font-medium text-gray-900 dark:text-gray-100',
-              nav: 'flex items-center',
-              nav_button: cn(
-                'h-7 w-7 bg-transparent p-0 opacity-70 hover:opacity-100',
-                'text-gray-800 dark:text-gray-100',
-                'hover:bg-gray-100 dark:hover:bg-gray-800',
-                'rounded-full transition-colors'
-              ),
-              table: 'w-full border-collapse',
-              head_row: 'flex',
-              head_cell: cn(
-                'text-gray-500 dark:text-gray-400',
-                'rounded-md w-9 font-normal text-[0.8rem] mb-1'
-              ),
-              row: 'flex w-full mt-2',
-              cell: cn(
-                'relative p-0 text-center text-sm focus-within:relative focus-within:z-20',
-                'first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md'
-              ),
-              day: cn(
-                'h-9 w-9 p-0 font-normal',
-                'aria-selected:opacity-100',
-                'hover:bg-gray-100 dark:hover:bg-gray-800',
-                'rounded-md transition-colors'
-              ),
-              day_selected: cn(
-                'bg-black dark:bg-white text-white dark:text-black',
-                'hover:bg-black dark:hover:bg-white',
-                'focus:bg-black dark:focus:bg-white'
-              ),
-              day_today: 'bg-gray-100 dark:bg-gray-800',
-              day_disabled: 'text-gray-400 dark:text-gray-600 hover:bg-transparent',
-              day_outside: 'opacity-50',
-            }}
-            components={{
-              Caption: ({ displayMonth }) => (
-                <div className="flex justify-between items-center">
-                  <button
-                    type="button"
-                    aria-label="Previous Month"
-                    className="nav_button"
-                    onClick={() => console.log('Go to previous month')}
-                  >
-                    Prev
-                  </button>
-                  <span aria-live="polite">
-                    {displayMonth.toLocaleDateString('en-US', {
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label="Next Month"
-                    className="nav_button"
-                    onClick={() => console.log('Go to next month')}
-                  >
-                    Next
-                  </button>
-                </div>
-              ),
-            }}
           />
         </div>
       )}
