@@ -74,16 +74,15 @@ const DateInput: React.FC<DateInputProps> = ({
       {/* Render UI */}
       <div
         className={cn(
-          'bg-white dark:bg-black text-black dark:text-white p-4',
-          'shadow-sm cursor-pointer h-full',
-          'hover:bg-gray-50 dark:hover:bg-gray-900',
-          'transition-colors duration-200'
+          "bg-white dark:bg-black text-black dark:text-white p-4",
+          "shadow-sm cursor-pointer h-full",
+          "hover:bg-gray-50 dark:hover:bg-gray-900",
+          "transition-colors duration-200",
+          type === "departure" ? "rounded-tl-lg" : "rounded-tr-lg"
         )}
         onClick={() => setShowCalendar((prev) => !prev)}
       >
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          {type === 'departure' ? 'Departure' : 'Return'}
-        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">{type === "departure" ? "Departure" : "Return"}</div>
         <div className="text-lg font-semibold">{formattedDate}</div>
         <div className="text-sm text-gray-600 dark:text-gray-400">{weekday}</div>
         {showCalendar ? (
