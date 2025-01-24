@@ -1,38 +1,40 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ModifySearch from '@/components/search/flights/modify/ModifySearch';
+import FlightCalendarSection from '@/components/search/flights/calendar/FlightCalendarSection';
 
-const FlightResultsContent = () => {
+const FlightResultsPage = () => {
   const searchParams = useSearchParams();
-  const tripType = searchParams.get('tripType');
+  const [departureDate, setDepartureDate] = useState<Date | undefined>(
+    searchParams.get('departureDate') 
+      ? new Date(searchParams.get('departureDate')!) 
+      : undefined
+  );
+  const [returnDate, setReturnDate] = useState<Date | undefined>(
+    searchParams.get('returnDate')
+      ? new Date(searchParams.get('returnDate')!)
+      : undefined
+  );
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Modify Search Section */}
-      <section>
-        <ModifySearch />
-      </section>
+    <div className="container mx-auto p-4 space-y-6">
+      <ModifySearch />
+      
+      <FlightCalendarSection
+        departureDate={departureDate}
+        returnDate={returnDate}
+        onDepartureDateSelect={setDepartureDate}
+        onReturnDateSelect={setReturnDate}
+      />
 
-      {/* Results Section */}
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Flight Results</h2>
-        <div className="text-gray-700 dark:text-gray-200">
-          {/* Placeholder content */}
-          <p>Displaying results for your search...</p>
-        </div>
-      </section>
+      <div className="bg-white dark:bg-black p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Flight Results</h2>
+        <p className="text-gray-600 dark:text-gray-400">Displaying results for your search...</p>
+      </div>
     </div>
   );
 };
 
-const Page = () => {
-  return (
-    <Suspense fallback={<p>Loading...</p>}>
-      <FlightResultsContent />
-    </Suspense>
-  );
-};
-
-export default Page;
+export default FlightResultsPage;
