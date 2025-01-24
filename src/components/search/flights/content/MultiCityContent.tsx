@@ -18,29 +18,53 @@ interface Flight {
   departureDate?: Date;
 }
 
-const MultiCityContent = () => {
-  const [flights, setFlights] = useState<Flight[]>([
-    {
-      id: 1,
-      fromCity: 'Dhaka',
-      fromAirport: 'Hazrat Shahjalal International Airport',
-      toCity: '',
-      toAirport: '',
-      departureDate: undefined,
-    },
-    {
-      id: 2,
-      fromCity: '',
-      fromAirport: '',
-      toCity: '',
-      toAirport: '',
-      departureDate: undefined,
-    },
-  ]);
+interface MultiCityContentProps {
+  initialFlights?: any[];
+  initialTravelers?: number;
+  initialClass?: string;
+}
+
+const MultiCityContent = ({ 
+  initialFlights = [], 
+  initialTravelers = 1,
+  initialClass = 'Economy'
+}: MultiCityContentProps) => {
+  // Initialize flights with provided data or defaults
+  const [flights, setFlights] = useState<Flight[]>(() => {
+    if (initialFlights && initialFlights.length >= 2) {
+      return initialFlights.map((flight, index) => ({
+        id: index + 1,
+        fromCity: flight.fromCity || '',
+        fromAirport: flight.fromAirport || '',
+        toCity: flight.toCity || '',
+        toAirport: flight.toAirport || '',
+        departureDate: flight.departureDate ? new Date(flight.departureDate) : undefined,
+      }));
+    }
+    return [
+      {
+        id: 1,
+        fromCity: '',
+        fromAirport: '',
+        toCity: '',
+        toAirport: '',
+        departureDate: undefined,
+      },
+      {
+        id: 2,
+        fromCity: '',
+        fromAirport: '',
+        toCity: '',
+        toAirport: '',
+        departureDate: undefined,
+      },
+    ];
+  });
+
   const [errors, setErrors] = useState<FlightSearchError[]>([]);
 
   const handleAddFlight = () => {
-    if (flights.length < 6) { // Maximum 6 flights
+    if (flights.length < 6) {
       setFlights([
         ...flights,
         {
@@ -56,7 +80,7 @@ const MultiCityContent = () => {
   };
 
   const handleRemoveFlight = (id: number) => {
-    if (flights.length > 2) { // Minimum 2 flights
+    if (flights.length > 2) {
       setFlights(flights.filter(flight => flight.id !== id));
     }
   };
@@ -129,23 +153,23 @@ const MultiCityContent = () => {
 
             <div className="lg:col-span-4">
               <div className="h-full bg-white dark:bg-black rounded-lg border border-gray-400 dark:border-gray-600">
-              <DateInput
-                type="departure"
-                value="Select date"
-                subValue=""
-                selectedDate={flight.departureDate} // Updated from selectedDeparture to selectedDate
-                onDateSelect={(type, date) => {
-                  updateFlight(flight.id, { departureDate: date });
-                }}
-              />
+                <DateInput
+                  type="departure"
+                  value={flight.departureDate?.toISOString().slice(0, 10) || 'Select date'}
+                  subValue=""
+                  selectedDate={flight.departureDate}
+                  onDateSelect={(type, date) => {
+                    updateFlight(flight.id, { departureDate: date });
+                  }}
+                />
               </div>
             </div>
 
             {index === 0 && (
               <div className="lg:col-span-3 rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-black">
                 <TravelersInput
-                  value="1 Traveler"
-                  subValue="Economy"
+                  value={`${initialTravelers} Traveler${initialTravelers !== 1 ? 's' : ''}`}
+                  subValue={initialClass}
                   onClick={() => console.log('Open travelers modal')}
                 />
               </div>
@@ -193,6 +217,7 @@ const MultiCityContent = () => {
         <SearchButton 
           searchData={{ flights }}
           onError={handleSearchErrors}
+          buttonText="Search Flights"
         />
       </div>
     </div>
