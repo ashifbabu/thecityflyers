@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ChevronDown from '@geist-ui/icons/chevronDown';
+
 interface TravelersInputProps {
   value: string;
   subValue: string;
@@ -7,11 +8,18 @@ interface TravelersInputProps {
 }
 
 const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClick }) => {
+  const MAX_PASSENGERS = 9; // Total passenger limit
+
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [adults, setAdults] = useState<number>(1);
+  const [kids, setKids] = useState<number>(0);
   const [children, setChildren] = useState<number>(0);
   const [infants, setInfants] = useState<number>(0);
   const [travelClass, setTravelClass] = useState<string>('Economy');
+
+  const totalPassengers = adults + kids + children + infants;
+  const remainingPassengers = MAX_PASSENGERS - totalPassengers;
+
   const modalRef = useRef<HTMLDivElement | null>(null);
 
   const toggleModal = (): void => {
@@ -20,6 +28,7 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
 
   const handleTravelerChange = (type: string, value: number): void => {
     if (type === 'adults') setAdults(value);
+    if (type === 'kids') setKids(value);
     if (type === 'children') setChildren(value);
     if (type === 'infants') setInfants(value);
   };
@@ -53,13 +62,13 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
       >
         <div className="text-sm text-gray-600 dark:text-gray-400">{value}</div>
         <div className="text-lg font-semibold text-black dark:text-white">
-          {adults + children + infants} Travelers
+          {totalPassengers} Travelers
         </div>
         <div className="text-sm text-gray-600 dark:text-gray-400">{subValue}</div>
-          {/* ChevronDown Icon */}
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
-              <ChevronDown size={20} />
-            </div>
+        {/* ChevronDown Icon */}
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
+          <ChevronDown size={20} />
+        </div>
       </button>
 
       {isOpen && (
@@ -69,10 +78,11 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
         >
           <div className="px-4">
             <div className="space-y-4">
+              {/* Adults Section */}
               <div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Adults (12y+)</div>
                 <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: 10 }, (_, num) => (
+                  {Array.from({ length: Math.min(10, adults + remainingPassengers + 1) }, (_, num) => (
                     <button
                       key={num}
                       onClick={() => handleTravelerChange('adults', num)}
@@ -87,44 +97,69 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
                   ))}
                 </div>
               </div>
+
+              {/* Kids Section */}
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Children (2 - 12y)</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Kids (2 - 5y)</div>
                 <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: 7 }, (_, num) => (
+                  {Array.from({ length: Math.min(6, kids + remainingPassengers + 1) }, (_, num) => (
                     <button
-                      key={num}
-                      onClick={() => handleTravelerChange('children', num)}
+                      key={num + 1}
+                      onClick={() => handleTravelerChange('kids', num + 1)}
                       className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
-                        children === num
+                        kids === num + 1
                           ? 'bg-black dark:bg-white text-white dark:text-black'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                       }`}
                     >
-                      {num}
+                      {num + 1}
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Children Section */}
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Infants (below 2y)</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Children (6 - 12y)</div>
                 <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: 7 }, (_, num) => (
+                  {Array.from({ length: Math.min(6, children + remainingPassengers + 1) }, (_, num) => (
                     <button
-                      key={num}
-                      onClick={() => handleTravelerChange('infants', num)}
+                      key={num + 1}
+                      onClick={() => handleTravelerChange('children', num + 1)}
                       className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
-                        infants === num
+                        children === num + 1
                           ? 'bg-black dark:bg-white text-white dark:text-black'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                       }`}
                     >
-                      {num}
+                      {num + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Infants Section */}
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Infants (below 2y)</div>
+                <div className="flex flex-wrap gap-1">
+                  {Array.from({ length: Math.min(3, infants + remainingPassengers + 1) }, (_, num) => (
+                    <button
+                      key={num + 1}
+                      onClick={() => handleTravelerChange('infants', num + 1)}
+                      className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
+                        infants === num + 1
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                      }`}
+                    >
+                      {num + 1}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
+            {/* Travel Class Section */}
             <div className="mt-4">
               <div className="text-sm text-gray-600 dark:text-gray-400">Travel Class</div>
               <div className="flex space-x-2 mt-2">
@@ -144,7 +179,23 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
               </div>
             </div>
 
-            <div className="mt-4 text-right">
+            {/* Buttons: Reset and Done */}
+            <div className="mt-4 flex justify-end space-x-2">
+              {/* Reset Button */}
+              <button
+                onClick={() => {
+                  setAdults(1); // Reset Adults to 1
+                  setKids(0); // Reset Kids to 0
+                  setChildren(0); // Reset Children to 0
+                  setInfants(0); // Reset Infants to 0
+                  setTravelClass('Economy'); // Reset Travel Class to default
+                }}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-black dark:text-white rounded-md shadow-sm hover:bg-gray-400 dark:hover:bg-gray-500"
+              >
+                Reset
+              </button>
+
+              {/* Done Button */}
               <button
                 onClick={toggleModal}
                 className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-md shadow-sm hover:bg-gray-700 dark:hover:bg-gray-300"

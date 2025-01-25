@@ -5,6 +5,7 @@ import { ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { useTripType } from '@/hooks/use-trip-type';
 import type { FlightSearchError } from '@/types/flight';
+import { isBefore } from 'date-fns';
 
 // Lazy load components
 const TripTypes = lazy(() => import('../trip/TripTypes'));
@@ -31,7 +32,7 @@ const SearchContent: React.FC = () => {
   const [returnDateState, setReturnDateState] = useState<Date | undefined>(undefined);
   const [travelers, setTravelers] = useState(1);
   const [errors, setErrors] = useState<FlightSearchError[]>([]);
-  const { tripType } = useTripType();
+  const { tripType, setTripType } = useTripType(); // Access trip type state
 
   const swapLocations = () => {
     setFromCity(toCity);
@@ -43,11 +44,14 @@ const SearchContent: React.FC = () => {
   const handleDateSelect = (type: 'departure' | 'return', date: Date) => {
     if (type === 'departure') {
       setDepartureDateState(date);
-      if (returnDateState && returnDateState < date) {
-        setReturnDateState(undefined);
+      if (returnDateState && isBefore(returnDateState, date)) {
+        setReturnDateState(undefined); // Reset return date if it is before departure date
       }
-    } else {
+    } else if (type === 'return') {
       setReturnDateState(date);
+      if (tripType !== 'roundTrip') {
+        setTripType('roundTrip'); // Automatically set trip type to round trip
+      }
     }
   };
 
@@ -140,36 +144,32 @@ const SearchContent: React.FC = () => {
           </div>
         </div>
 
-          {/* Date Selection */}
-          <div className="lg:col-span-4">
-            <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black border border-gray-400 dark:border-gray-600 rounded-lg overflow-visible">
-              <Suspense fallback={<div className="h-24" />}>
-                {/* Departure DateInput */}
-                <div className="border-r border-gray-400 dark:border-gray-600">
-                  <DateInput
-                    type="departure"
-                    value={departureDateState ? departureDateState.toISOString().slice(0, 10) : 'Select date'} // Ensure value is a string
-                    subValue=""
-                    selectedDate={departureDateState}
-                    onDateSelect={(type, date) => handleDateSelect(type, date)} // Pass the correct type and date
-                  />
-                </div>
-
-                {/* Return DateInput */}
-                <div>
-                  <DateInput
-                    type="return"
-                    value={returnDateState ? returnDateState.toISOString().slice(0, 10) : 'Select date'} // Ensure value is a string
-                    subValue=""
-                    selectedDate={returnDateState}
-                    onDateSelect={(type, date) => handleDateSelect(type, date)} // Pass the correct type and date
-                    departureDate={departureDateState}
-                  />
-                </div>
-              </Suspense>
-            </div>
+        {/* Date Selection */}
+        <div className="lg:col-span-4">
+          <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black border border-gray-400 dark:border-gray-600 rounded-lg overflow-visible">
+            <Suspense fallback={<div className="h-24" />}>
+              <div className="border-r border-gray-400 dark:border-gray-600">
+                <DateInput
+                  type="departure"
+                  value={departureDateState ? departureDateState.toISOString().slice(0, 10) : 'Select date'}
+                  subValue=""
+                  selectedDate={departureDateState}
+                  onDateSelect={(type, date) => handleDateSelect(type, date)}
+                />
+              </div>
+              <div>
+                <DateInput
+                  type="return"
+                  value={returnDateState ? returnDateState.toISOString().slice(0, 10) : 'Select date'}
+                  subValue=""
+                  selectedDate={returnDateState}
+                  onDateSelect={(type, date) => handleDateSelect(type, date)}
+                  departureDate={departureDateState}
+                />
+              </div>
+            </Suspense>
           </div>
-
+        </div>
 
         {/* Travelers Selection */}
         <div className="lg:col-span-3 rounded-lg border border-gray-400 dark:border-gray-600 overflow-visible bg-white dark:bg-black">

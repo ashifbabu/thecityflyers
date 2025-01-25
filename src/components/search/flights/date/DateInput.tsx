@@ -12,7 +12,6 @@ interface DateInputProps {
   subValue: string;
   selectedDate?: Date;
   onDateSelect?: (type: 'departure' | 'return', date: Date) => void;
-  onChange?: (date: Date) => void; // Add onChange here
   className?: string;
   departureDate?: Date;
 }
@@ -21,7 +20,7 @@ const DateInput: React.FC<DateInputProps> = ({
   type,
   value,
   subValue,
-  onDateSelect, // Use onDateSelect only
+  onDateSelect,
   className,
   selectedDate,
   departureDate,
@@ -32,7 +31,6 @@ const DateInput: React.FC<DateInputProps> = ({
 
   const today = startOfDay(new Date());
   const minSelectableDate = addDays(today, 2);
-  const numberOfMonths = tripType === 'roundTrip' ? 2 : 1;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -54,7 +52,7 @@ const DateInput: React.FC<DateInputProps> = ({
   };
 
   const disabledDays = {
-    before: type === 'return' && departureDate ? departureDate : minSelectableDate,
+    before: type === 'return' && departureDate ? addDays(departureDate, 1) : minSelectableDate,
   };
 
   const formattedDate = selectedDate
@@ -71,7 +69,6 @@ const DateInput: React.FC<DateInputProps> = ({
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
-      {/* Render UI */}
       <div
         className={cn(
           "bg-white dark:bg-black text-black dark:text-white p-4",
@@ -99,15 +96,12 @@ const DateInput: React.FC<DateInputProps> = ({
             'bg-white dark:bg-gray-900',
             'border border-gray-200 dark:border-gray-700',
             'rounded-lg shadow-xl',
-            'p-4',
-            'w-[320px] md:w-auto max-w-sm'
+            'w-[320px]'
           )}
           style={{
-            position: 'absolute',
             top: '100%',
             left: type === 'return' ? 'auto' : 0,
             right: type === 'return' ? 0 : 'auto',
-            margin: type === 'return' ? '0 0 0 auto' : '0 auto 0 0',
           }}
         >
           <DayPicker
@@ -115,8 +109,13 @@ const DateInput: React.FC<DateInputProps> = ({
             selected={selectedDate}
             onSelect={handleDayClick}
             disabled={disabledDays}
-            numberOfMonths={numberOfMonths}
+            numberOfMonths={1} // Single month regardless of trip type
             showOutsideDays={false}
+            modifiersStyles={{
+              selected: { backgroundColor: '#007BFF', color: '#fff' },
+              disabled: { color: '#d3d3d3' },
+            }}
+            pagedNavigation // Allow pagination for easier navigation
           />
         </div>
       )}
@@ -125,3 +124,6 @@ const DateInput: React.FC<DateInputProps> = ({
 };
 
 export default DateInput;
+
+
+
