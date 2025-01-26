@@ -14,6 +14,8 @@ interface DateInputProps {
   onDateSelect?: (type: 'departure' | 'return', date: Date) => void;
   className?: string;
   departureDate?: Date;
+  showCalendar: boolean; // Add this property
+  setShowCalendar: React.Dispatch<React.SetStateAction<boolean>>; // Add this property
 }
 
 const DateInput: React.FC<DateInputProps> = ({
@@ -69,26 +71,27 @@ const DateInput: React.FC<DateInputProps> = ({
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
-      <div
-        className={cn(
-          "bg-white dark:bg-black text-black dark:text-white p-4",
-          "shadow-sm cursor-pointer h-full",
-          "hover:bg-gray-50 dark:hover:bg-gray-900",
-          "transition-colors duration-200",
-          type === "departure" ? "rounded-tl-lg" : "rounded-tr-lg"
-        )}
-        onClick={() => setShowCalendar((prev) => !prev)}
-      >
-        <div className="text-sm text-gray-600 dark:text-gray-400">{type === "departure" ? "Departure" : "Return"}</div>
-        <div className="text-lg font-semibold">{formattedDate}</div>
-        <div className="text-sm text-gray-600 dark:text-gray-400">{weekday}</div>
-        {showCalendar ? (
-          <ChevronUpIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
-        ) : (
-          <ChevronDownIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
-        )}
-      </div>
-
+        <div
+          className={cn(
+            'h-full w-full p-4 bg-white dark:bg-black text-black dark:text-white',
+            'cursor-pointer rounded-lg', // Matches parent box radius
+            'hover:bg-gray-50 dark:hover:bg-gray-900 hover:shadow-md',
+            'transition-all duration-200'
+          )}
+          onClick={() => setShowCalendar((prev) => !prev)}
+        >
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {type === 'departure' ? 'Departure' : 'Return'}
+          </div>
+          <div className="text-lg font-semibold">{formattedDate || 'Select date'}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">{weekday}</div>
+          {showCalendar ? (
+            <ChevronUpIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
+          ) : (
+            <ChevronDownIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
+          )}
+        </div>
+        
       {showCalendar && (
         <div
           className={cn(
@@ -109,13 +112,13 @@ const DateInput: React.FC<DateInputProps> = ({
             selected={selectedDate}
             onSelect={handleDayClick}
             disabled={disabledDays}
-            numberOfMonths={1} // Single month regardless of trip type
+            numberOfMonths={tripType === 'roundTrip' ? 2 : 1} // Two months for round trips
             showOutsideDays={false}
             modifiersStyles={{
               selected: { backgroundColor: '#007BFF', color: '#fff' },
               disabled: { color: '#d3d3d3' },
             }}
-            pagedNavigation // Allow pagination for easier navigation
+            pagedNavigation
           />
         </div>
       )}
@@ -124,6 +127,3 @@ const DateInput: React.FC<DateInputProps> = ({
 };
 
 export default DateInput;
-
-
-

@@ -27,7 +27,14 @@ const LocationInput: React.FC<LocationInputProps> = ({
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // 🔍 Fetch suggestions from the API
+  // Synchronize `inputValue` with `value` whenever `value` changes
+  useEffect(() => {
+    if (!isEditing) {
+      setInputValue(value); // Ensure inputValue shows the current value when not editing
+    }
+  }, [value, isEditing]);
+
+  // Fetch suggestions from the API
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (inputValue.trim().length > 0) {
@@ -54,7 +61,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsEditing(false);
-        setInputValue(value);
+        setInputValue(value); // Reset inputValue to current value when closing
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -63,18 +70,17 @@ const LocationInput: React.FC<LocationInputProps> = ({
 
   const handleDisplayClick = () => {
     setIsEditing(true);
-    setInputValue(value);
+    setInputValue(value); // Set inputValue to the current value on click
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+    setInputValue(e.target.value); // Update inputValue as user types
   };
 
-  // ✅ Update this function to pass the correct airport details
   const handleSuggestionClick = (airport: Airport) => {
     onChange(airport.city, airport.airportName);
-    setInputValue(airport.city);
-    setIsEditing(false);
+    setInputValue(airport.city); // Update inputValue with the selected suggestion
+    setIsEditing(false); // Exit edit mode
   };
 
   return (
@@ -101,7 +107,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
             type="text"
             className="w-full py-2 px-3 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600"
             placeholder="Type the airport name or airport code"
-            value={inputValue}
+            value={inputValue} // Input value reflects the current value
             onChange={handleInputChange}
           />
           {filteredSuggestions.length > 0 && (

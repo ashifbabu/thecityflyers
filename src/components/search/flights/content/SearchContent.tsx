@@ -34,6 +34,10 @@ const SearchContent: React.FC = () => {
   const [errors, setErrors] = useState<FlightSearchError[]>([]);
   const { tripType, setTripType } = useTripType(); // Access trip type state
 
+  // States for calendar toggles
+  const [showDepartureCalendar, setShowDepartureCalendar] = useState(false);
+  const [showReturnCalendar, setShowReturnCalendar] = useState(false);
+
   const swapLocations = () => {
     setFromCity(toCity);
     setFromAirport(toAirport);
@@ -94,77 +98,89 @@ const SearchContent: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-1">
         {/* Location Selection */}
-        <div className="lg:col-span-5">
-          <div className="relative grid grid-rows-2 gap-0 rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
-            <Suspense fallback={<div className="h-24" />}>
-              {/* From Section */}
-              <div className="border-b border-gray-300 dark:border-gray-600">
-                <LocationInput
-                  type="from"
-                  value={fromCity}
-                  subValue={fromAirport}
-                  onChange={(city, airportName) => {
-                    setFromCity(city);
-                    setFromAirport(airportName);
-                  }}
-                />
-              </div>
-              {/* To Section */}
-              <LocationInput
-                type="to"
-                value={toCity}
-                subValue={toAirport}
-                onChange={(city, airportName) => {
-                  setToCity(city);
-                  setToAirport(airportName);
-                }}
-              />
-            </Suspense>
-            {/* Swap Button */}
-            <button
-              type="button"
-              onClick={swapLocations}
-              aria-label="Swap locations"
-              className={cn(
-                'absolute right-20 top-1/2 translate-x-1/2 -translate-y-1/2 z-10 rounded-full',
-                'w-8 h-8',
-                'bg-white dark:bg-black',
-                'border border-gray-400 dark:border-gray-600',
-                'flex items-center justify-center',
-                'hover:bg-gray-200 dark:hover:bg-gray-800',
-                'focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-700',
-                'shadow-sm'
-              )}
-            >
-              <ArrowsRightLeftIcon
-                className="h-4 w-4 text-gray-600 dark:text-gray-300"
-                style={{ transform: 'rotate(90deg)' }}
-              />
-            </button>
-          </div>
-        </div>
+        <div className="lg:col-span-5 h-full">
+  <div className="relative grid grid-rows-2 gap-0 h-full rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
+    <Suspense fallback={<div className="h-24" />}>
+      {/* From Section */}
+      <div className="border-b border-gray-300 dark:border-gray-600 h-full">
+        <LocationInput
+          type="from"
+          value={fromCity}
+          subValue={fromAirport}
+          onChange={(city, airportName) => {
+            setFromCity(city);
+            setFromAirport(airportName);
+          }}
+        />
+      </div>
+      {/* To Section */}
+      <div className="h-full">
+        <LocationInput
+          type="to"
+          value={toCity}
+          subValue={toAirport}
+          onChange={(city, airportName) => {
+            setToCity(city);
+            setToAirport(airportName);
+          }}
+        />
+      </div>
+    </Suspense>
+
+    {/* Swap Button */}
+    <button
+      type="button"
+      onClick={swapLocations}
+      aria-label="Swap locations"
+      className={cn(
+        'absolute right-20 top-1/2 translate-x-1/2 -translate-y-1/2 z-10 rounded-full',
+        'w-8 h-8',
+        'bg-white dark:bg-black',
+        'border border-gray-400 dark:border-gray-600',
+        'flex items-center justify-center',
+        'hover:bg-gray-200 dark:hover:bg-gray-800',
+        'focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-700',
+        'shadow-sm'
+      )}
+    >
+      <ArrowsRightLeftIcon
+        className="h-4 w-4 text-gray-600 dark:text-gray-300"
+        style={{ transform: 'rotate(90deg)' }}
+      />
+    </button>
+  </div>
+</div>
 
         {/* Date Selection */}
         <div className="lg:col-span-4">
-          <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black border border-gray-400 dark:border-gray-600 rounded-lg overflow-visible">
-            <Suspense fallback={<div className="h-24" />}>
-              <div className="border-r border-gray-400 dark:border-gray-600">
+  <div className="grid grid-cols-2 gap-0 h-full min-h-full bg-white dark:bg-black border border-gray-400 dark:border-gray-600 rounded-lg">
+    <Suspense fallback={<div className="h-24" />}>
+      {/* Departure Box */}
+              <div className="border-r border-gray-400 dark:border-gray-600 h-full">
                 <DateInput
                   type="departure"
                   value={departureDateState ? departureDateState.toISOString().slice(0, 10) : 'Select date'}
                   subValue=""
                   selectedDate={departureDateState}
-                  onDateSelect={(type, date) => handleDateSelect(type, date)}
+                  onDateSelect={handleDateSelect}
+                  showCalendar={showDepartureCalendar}
+                  setShowCalendar={setShowDepartureCalendar}
+                  className="h-full"
                 />
               </div>
-              <div>
+
+              {/* Return Box */}
+              <div className="h-full">
                 <DateInput
                   type="return"
                   value={returnDateState ? returnDateState.toISOString().slice(0, 10) : 'Select date'}
                   subValue=""
                   selectedDate={returnDateState}
-                  onDateSelect={(type, date) => handleDateSelect(type, date)}
+                  onDateSelect={handleDateSelect}
                   departureDate={departureDateState}
+                  showCalendar={showReturnCalendar}
+                  setShowCalendar={setShowReturnCalendar}
+                  className="h-full"
                 />
               </div>
             </Suspense>
