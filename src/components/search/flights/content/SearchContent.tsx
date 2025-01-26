@@ -163,8 +163,6 @@ const SearchContent: React.FC = () => {
                   subValue=""
                   selectedDate={departureDateState}
                   onDateSelect={handleDateSelect}
-                  showCalendar={showDepartureCalendar}
-                  setShowCalendar={setShowDepartureCalendar}
                   className="h-full"
                 />
               </div>
@@ -178,8 +176,6 @@ const SearchContent: React.FC = () => {
                   selectedDate={returnDateState}
                   onDateSelect={handleDateSelect}
                   departureDate={departureDateState}
-                  showCalendar={showReturnCalendar}
-                  setShowCalendar={setShowReturnCalendar}
                   className="h-full"
                 />
               </div>
