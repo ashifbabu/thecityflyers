@@ -24,9 +24,9 @@ interface Airport {
 }
 
 const SearchContent: React.FC = () => {
-  const [fromCity, setFromCity] = useState('Dhaka');
+  const [fromCity, setFromCity] = useState('DAC');
   const [fromAirport, setFromAirport] = useState('Hazrat Shahjalal International Airport');
-  const [toCity, setToCity] = useState('Chittagong');
+  const [toCity, setToCity] = useState('CGP');
   const [toAirport, setToAirport] = useState('Shah Amanat International');
   const [departureDateState, setDepartureDateState] = useState<Date | undefined>(undefined);
   const [returnDateState, setReturnDateState] = useState<Date | undefined>(undefined);
@@ -103,8 +103,8 @@ const SearchContent: React.FC = () => {
                   type="from"
                   value={fromCity}
                   subValue={fromAirport}
-                  onChange={(city, airportName) => {
-                    setFromCity(city);
+                  onChange={(city, airportName, iataCode) => {
+                    setFromCity(iataCode); // Set IATA Code
                     setFromAirport(airportName);
                   }}
                 />
@@ -114,8 +114,8 @@ const SearchContent: React.FC = () => {
                 type="to"
                 value={toCity}
                 subValue={toAirport}
-                onChange={(city, airportName) => {
-                  setToCity(city);
+                 onChange={(city, airportName, iataCode) => {
+                  setToCity(iataCode); // Set IATA Code
                   setToAirport(airportName);
                 }}
               />

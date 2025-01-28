@@ -5,7 +5,6 @@ import { useTripType } from '@/hooks/use-trip-type';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
 import { addDays, startOfDay, isBefore } from 'date-fns';
-
 interface DateInputProps {
   type: 'departure' | 'return';
   value: string;
@@ -26,7 +25,7 @@ const DateInput: React.FC<DateInputProps> = ({
   departureDate,
 }) => {
   const { tripType } = useTripType();
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false); // Internal state for the calendar
   const containerRef = useRef<HTMLDivElement>(null);
 
   const today = startOfDay(new Date());
@@ -71,16 +70,17 @@ const DateInput: React.FC<DateInputProps> = ({
     <div className={`relative ${className}`} ref={containerRef}>
       <div
         className={cn(
-          "bg-white dark:bg-black text-black dark:text-white p-4",
-          "shadow-sm cursor-pointer h-full",
-          "hover:bg-gray-50 dark:hover:bg-gray-900",
-          "transition-colors duration-200",
-          type === "departure" ? "rounded-tl-lg" : "rounded-tr-lg"
+          'h-full w-full p-4 bg-white dark:bg-black text-black dark:text-white',
+          'cursor-pointer rounded-lg',
+          'hover:bg-gray-50 dark:hover:bg-gray-900 hover:shadow-md',
+          'transition-all duration-200'
         )}
         onClick={() => setShowCalendar((prev) => !prev)}
       >
-        <div className="text-sm text-gray-600 dark:text-gray-400">{type === "departure" ? "Departure" : "Return"}</div>
-        <div className="text-lg font-semibold">{formattedDate}</div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          {type === 'departure' ? 'Departure' : 'Return'}
+        </div>
+        <div className="text-lg font-semibold">{formattedDate || 'Select date'}</div>
         <div className="text-sm text-gray-600 dark:text-gray-400">{weekday}</div>
         {showCalendar ? (
           <ChevronUpIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 absolute right-4 top-1/2 transform -translate-y-1/2" />
@@ -109,13 +109,13 @@ const DateInput: React.FC<DateInputProps> = ({
             selected={selectedDate}
             onSelect={handleDayClick}
             disabled={disabledDays}
-            numberOfMonths={1} // Single month regardless of trip type
+            numberOfMonths={tripType === 'roundTrip' ? 2 : 1}
             showOutsideDays={false}
             modifiersStyles={{
               selected: { backgroundColor: '#007BFF', color: '#fff' },
               disabled: { color: '#d3d3d3' },
             }}
-            pagedNavigation // Allow pagination for easier navigation
+            pagedNavigation
           />
         </div>
       )}
@@ -124,6 +124,3 @@ const DateInput: React.FC<DateInputProps> = ({
 };
 
 export default DateInput;
-
-
-

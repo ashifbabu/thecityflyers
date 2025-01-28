@@ -11,7 +11,7 @@ interface LocationInputProps {
   type: 'from' | 'to';
   value: string;
   subValue: string;
-  onChange: (city: string, airportName: string) => void;
+  onChange: (city: string, airportName: string, code: string) => void; // Pass IATA Code
 }
 
 const LocationInput: React.FC<LocationInputProps> = ({
@@ -71,8 +71,10 @@ const LocationInput: React.FC<LocationInputProps> = ({
   };
 
   // ✅ Update this function to pass the correct airport details
+  // ✅ Update function to pass correct airport details
   const handleSuggestionClick = (airport: Airport) => {
-    onChange(airport.city, airport.airportName);
+    console.log(`📌 Selected Airport: ${airport.city} (${airport.code})`);
+    onChange(airport.city, airport.airportName, airport.code); // Pass IATA Code
     setInputValue(airport.city);
     setIsEditing(false);
   };
