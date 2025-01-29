@@ -26,8 +26,10 @@ interface Airport {
 const SearchContent: React.FC = () => {
   const [fromCity, setFromCity] = useState('Dhaka');
   const [fromAirport, setFromAirport] = useState('Hazrat Shahjalal International Airport');
+  const [fromAirportCode, setFromAirportCode] = useState('DAC');
   const [toCity, setToCity] = useState('Chittagong');
   const [toAirport, setToAirport] = useState('Shah Amanat International');
+  const [toAirportCode, setToAirportCode] = useState('CGP');
   const [departureDateState, setDepartureDateState] = useState<Date | undefined>(undefined);
   const [returnDateState, setReturnDateState] = useState<Date | undefined>(undefined);
   const [travelers, setTravelers] = useState(1);
@@ -103,25 +105,27 @@ const SearchContent: React.FC = () => {
     <Suspense fallback={<div className="h-24" />}>
       {/* From Section */}
       <div className="border-b border-gray-300 dark:border-gray-600 h-full">
-        <LocationInput
-          type="from"
-          value={fromCity}
-          subValue={fromAirport}
-          onChange={(city, airportName) => {
-            setFromCity(city);
-            setFromAirport(airportName);
-          }}
-        />
+      <LocationInput
+        type="from"
+        value={fromCity}
+        subValue={fromAirport}
+        onChange={(city, airportName, code) => {
+          setFromCity(city);
+          setFromAirport(airportName);
+          setFromAirportCode(code); // Store airport code
+        }}
+      />
       </div>
       {/* To Section */}
       <div className="h-full">
-        <LocationInput
+      <LocationInput
           type="to"
           value={toCity}
           subValue={toAirport}
-          onChange={(city, airportName) => {
+          onChange={(city, airportName, code) => {
             setToCity(city);
             setToAirport(airportName);
+            setToAirportCode(code); // Store airport code
           }}
         />
       </div>

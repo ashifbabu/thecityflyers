@@ -11,7 +11,7 @@ interface LocationInputProps {
   type: 'from' | 'to';
   value: string;
   subValue: string;
-  onChange: (city: string, airportName: string) => void;
+  onChange: (city: string, airportName: string, code: string) => void;
 }
 
 const LocationInput: React.FC<LocationInputProps> = ({
@@ -24,13 +24,14 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const [inputValue, setInputValue] = useState(value);
   const [filteredSuggestions, setFilteredSuggestions] = useState<Airport[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Synchronize `inputValue` with `value` whenever `value` changes
   useEffect(() => {
     if (!isEditing) {
-      setInputValue(value); // Ensure inputValue shows the current value when not editing
+      setInputValue(value);
     }
   }, [value, isEditing]);
 
@@ -51,7 +52,7 @@ const LocationInput: React.FC<LocationInputProps> = ({
     };
 
     if (isEditing) {
-      const debounceTimeout = setTimeout(() => fetchSuggestions(), 300); // Debounce API call
+      const debounceTimeout = setTimeout(() => fetchSuggestions(), 300);
       return () => clearTimeout(debounceTimeout);
     }
   }, [inputValue, isEditing, API_URL]);
@@ -61,26 +62,33 @@ const LocationInput: React.FC<LocationInputProps> = ({
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsEditing(false);
-        setInputValue(value); // Reset inputValue to current value when closing
+        setInputValue(value);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [value]);
 
+  // FIX: Ensure input clears when clicked
   const handleDisplayClick = () => {
     setIsEditing(true);
-    setInputValue(value); // Set inputValue to the current value on click
+    setInputValue('');
+
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value); // Update inputValue as user types
+    setInputValue(e.target.value);
   };
 
   const handleSuggestionClick = (airport: Airport) => {
-    onChange(airport.city, airport.airportName);
-    setInputValue(airport.city); // Update inputValue with the selected suggestion
-    setIsEditing(false); // Exit edit mode
+    onChange(airport.city, airport.airportName, airport.code);
+    setInputValue(`${airport.city} - ${airport.code}`);
+    setIsEditing(false);
   };
 
   return (
@@ -104,11 +112,14 @@ const LocationInput: React.FC<LocationInputProps> = ({
             {type === 'from' ? 'From' : 'To'}
           </div>
           <input
+            ref={inputRef}
             type="text"
             className="w-full py-2 px-3 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600"
             placeholder="Type the airport name or airport code"
-            value={inputValue} // Input value reflects the current value
+            value={inputValue}
+            onFocus={() => setInputValue('')} 
             onChange={handleInputChange}
+            autoFocus
           />
           {filteredSuggestions.length > 0 && (
             <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-64 overflow-auto z-50">
