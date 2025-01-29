@@ -10,9 +10,10 @@ interface ExtendedMenuItemProps extends MenuItemProps {
     isCollapsed?: boolean;
     onClick?: () => void;
     toggleSidebar?: () => void;
+    showText?: boolean; // ✅ FIXED: Added showText prop
 }
 
-const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSidebar }: ExtendedMenuItemProps) => {
+const MenuItem = ({ href, icon, label, children, isCollapsed, showText, onClick, toggleSidebar }: ExtendedMenuItemProps) => {
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
@@ -50,19 +51,19 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
                     onClick={toggleSubMenu}
                     aria-label={label}
                     aria-expanded={isOpen}
-                    type="button" // Important for proper button behavior
+                    type="button"
                 >
                     <div className="flex items-center">
                         <div className="w-5 h-5 text-gray-900 dark:text-white" aria-hidden="true">
                             {icon}
                         </div>
-                        {!isCollapsed && (
+                        {showText && ( // ✅ FIXED: Show text only if showText is true
                             <span className="ml-3 truncate">
                                 {label}
                             </span>
                         )}
                     </div>
-                    {!isCollapsed && (
+                    {showText && ( // ✅ FIXED: Show arrow only if expanded
                         <div className="flex-shrink-0" aria-hidden="true">
                             {isOpen ? (
                                 <ChevronDownIcon className="w-5 h-5 text-gray-900 dark:text-white" />
@@ -87,7 +88,7 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
                     <div className="w-5 h-5 text-gray-900 dark:text-white" aria-hidden="true">
                         {icon}
                     </div>
-                    {!isCollapsed && (
+                    {showText && ( // ✅ FIXED: Ensures text is shown only when expanded or on mobile
                         <span className="ml-3 truncate">
                             {label}
                         </span>
@@ -97,7 +98,7 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
 
             {/* Submenu Items */}
             {children && isOpen && (
-                <div className="pl-8 space-y-1">
+                <div className={cn("pl-8 space-y-1", !showText && "hidden")}> {/* ✅ FIXED: Hide submenu text when collapsed */}
                     {children.map((child) => (
                         <Link
                             key={child.href}
@@ -109,9 +110,11 @@ const MenuItem = ({ href, icon, label, children, isCollapsed, onClick, toggleSid
                             <div className="w-5 h-5" aria-hidden="true">
                                 {child.icon}
                             </div>
-                            <span className="ml-3 truncate">
-                                {child.label}
-                            </span>
+                            {showText && (
+                                <span className="ml-3 truncate">
+                                    {child.label}
+                                </span>
+                            )}
                         </Link>
                     ))}
                 </div>
