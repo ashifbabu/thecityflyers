@@ -5,6 +5,7 @@ import { useTripType } from '@/hooks/use-trip-type';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
 import { addDays, startOfDay, isBefore } from 'date-fns';
+
 interface DateInputProps {
   type: 'departure' | 'return';
   value: string;
@@ -25,7 +26,8 @@ const DateInput: React.FC<DateInputProps> = ({
   departureDate,
 }) => {
   const { tripType } = useTripType();
-  const [showCalendar, setShowCalendar] = useState(false); // Internal state for the calendar
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const containerRef = useRef<HTMLDivElement>(null);
 
   const today = startOfDay(new Date());
@@ -43,11 +45,9 @@ const DateInput: React.FC<DateInputProps> = ({
 
   const handleDayClick: SelectSingleEventHandler = (day) => {
     if (!day) return;
-
     if (isBefore(day, minSelectableDate)) return;
-
     setShowCalendar(false);
-    onDateSelect?.(type, day); // Call the onDateSelect prop
+    onDateSelect?.(type, day);
   };
 
   const disabledDays = {
@@ -109,13 +109,14 @@ const DateInput: React.FC<DateInputProps> = ({
             selected={selectedDate}
             onSelect={handleDayClick}
             disabled={disabledDays}
-            numberOfMonths={tripType === 'roundTrip' ? 2 : 1}
+            month={currentMonth}
+            onMonthChange={setCurrentMonth}
+            numberOfMonths={1}
             showOutsideDays={false}
             modifiersStyles={{
               selected: { backgroundColor: '#007BFF', color: '#fff' },
               disabled: { color: '#d3d3d3' },
             }}
-            pagedNavigation
           />
         </div>
       )}

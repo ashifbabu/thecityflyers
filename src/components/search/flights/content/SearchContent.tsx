@@ -101,91 +101,99 @@ const SearchContent: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-1">
         {/* Location Selection */}
         <div className="lg:col-span-5 h-full">
-  <div className="relative grid grid-rows-2 gap-0 h-full rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
-    <Suspense fallback={<div className="h-24" />}>
-      {/* From Section */}
-      <div className="border-b border-gray-300 dark:border-gray-600 h-full">
-      <LocationInput
-        type="from"
-        value={fromCity}
-        subValue={fromAirport}
-        onChange={(city, airportName, code) => {
-          setFromCity(city);
-          setFromAirport(airportName);
-          setFromAirportCode(code); // Store airport code
-        }}
-      />
-      </div>
-      {/* To Section */}
-      <div className="h-full">
-      <LocationInput
-          type="to"
-          value={toCity}
-          subValue={toAirport}
-          onChange={(city, airportName, code) => {
-            setToCity(city);
-            setToAirport(airportName);
-            setToAirportCode(code); // Store airport code
-          }}
-        />
-      </div>
-    </Suspense>
-
-    {/* Swap Button */}
-    <button
-      type="button"
-      onClick={swapLocations}
-      aria-label="Swap locations"
-      className={cn(
-        'absolute right-20 top-1/2 translate-x-1/2 -translate-y-1/2 z-10 rounded-full',
-        'w-8 h-8',
-        'bg-white dark:bg-black',
-        'border border-gray-400 dark:border-gray-600',
-        'flex items-center justify-center',
-        'hover:bg-gray-200 dark:hover:bg-gray-800',
-        'focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-700',
-        'shadow-sm'
-      )}
-    >
-      <ArrowsRightLeftIcon
-        className="h-4 w-4 text-gray-600 dark:text-gray-300"
-        style={{ transform: 'rotate(90deg)' }}
-      />
-    </button>
-  </div>
-</div>
-
-        {/* Date Selection */}
-        <div className="lg:col-span-4">
-  <div className="grid grid-cols-2 gap-0 h-full min-h-full bg-white dark:bg-black border border-gray-400 dark:border-gray-600 rounded-lg">
-    <Suspense fallback={<div className="h-24" />}>
-      {/* Departure Box */}
-              <div className="border-r border-gray-400 dark:border-gray-600 h-full">
-                <DateInput
-                  type="departure"
-                  value={departureDateState ? departureDateState.toISOString().slice(0, 10) : 'Select date'}
-                  subValue=""
-                  selectedDate={departureDateState}
-                  onDateSelect={handleDateSelect}
-                  className="h-full"
-                />
+          <div className="relative grid grid-rows-2 gap-0 h-full rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
+            <Suspense fallback={<div className="h-24" />}>
+              {/* From Section */}
+              <div className="border-b border-gray-300 dark:border-gray-600 h-full">
+              <LocationInput
+                type="from"
+                value={fromCity}
+                subValue={fromAirport}
+                onChange={(city, airportName, code) => {
+                  setFromCity(city);
+                  setFromAirport(airportName);
+                  setFromAirportCode(code); // Store airport code
+                }}
+              />
               </div>
-
-              {/* Return Box */}
+              {/* To Section */}
               <div className="h-full">
-                <DateInput
-                  type="return"
-                  value={returnDateState ? returnDateState.toISOString().slice(0, 10) : 'Select date'}
-                  subValue=""
-                  selectedDate={returnDateState}
-                  onDateSelect={handleDateSelect}
-                  departureDate={departureDateState}
-                  className="h-full"
+              <LocationInput
+                  type="to"
+                  value={toCity}
+                  subValue={toAirport}
+                  onChange={(city, airportName, code) => {
+                    setToCity(city);
+                    setToAirport(airportName);
+                    setToAirportCode(code); // Store airport code
+                  }}
                 />
               </div>
             </Suspense>
+
+            {/* Swap Button */}
+            <button
+              type="button"
+              onClick={swapLocations}
+              aria-label="Swap locations"
+              className={cn(
+                'absolute right-20 top-1/2 translate-x-1/2 -translate-y-1/2 z-10 rounded-full',
+                'w-8 h-8',
+                'bg-white dark:bg-black',
+                'border border-gray-400 dark:border-gray-600',
+                'flex items-center justify-center',
+                'hover:bg-gray-200 dark:hover:bg-gray-800',
+                'focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-700',
+                'shadow-sm'
+              )}
+            >
+              <ArrowsRightLeftIcon
+                className="h-4 w-4 text-gray-600 dark:text-gray-300"
+                style={{ transform: 'rotate(90deg)' }}
+              />
+            </button>
           </div>
         </div>
+
+            {/* Date Selection */}
+            <div className="lg:col-span-4">
+              <div className="grid grid-cols-2 h-full border border-gray-400 dark:border-gray-600 rounded-lg overflow-visible">
+                <Suspense fallback={<div className="h-full min-h-[120px]" />}>
+                  {/* Departure Box */}
+                  <div className="border-r border-gray-400 dark:border-gray-600">
+                    <DateInput
+                      type="departure"
+                      value={departureDateState ? departureDateState.toLocaleDateString('en-US', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      }) : 'Select date'}
+                      subValue={departureDateState ? departureDateState.toLocaleDateString('en-US', { weekday: 'long' }) : ''}
+                      selectedDate={departureDateState}
+                      onDateSelect={handleDateSelect}
+                      className="h-full"
+                    />
+                  </div>
+
+                  {/* Return Box */}
+                  <div>
+                    <DateInput
+                      type="return"
+                      value={returnDateState ? returnDateState.toLocaleDateString('en-US', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      }) : 'Select date'}
+                      subValue={returnDateState ? returnDateState.toLocaleDateString('en-US', { weekday: 'long' }) : ''}
+                      selectedDate={returnDateState}
+                      onDateSelect={handleDateSelect}
+                      departureDate={departureDateState}
+                      className="h-full"
+                    />
+                  </div>
+                </Suspense>
+              </div>
+            </div>
 
         {/* Travelers Selection */}
         <div className="lg:col-span-3 rounded-lg border border-gray-400 dark:border-gray-600 overflow-visible bg-white dark:bg-black">
