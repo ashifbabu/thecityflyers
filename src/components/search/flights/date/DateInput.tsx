@@ -31,7 +31,7 @@ const DateInput: React.FC<DateInputProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const today = startOfDay(new Date());
-  const minSelectableDate = addDays(today, 2);
+  const minSelectableDate = addDays(today, 0);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

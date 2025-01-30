@@ -28,14 +28,12 @@ const LocationInput: React.FC<LocationInputProps> = ({
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // Synchronize `inputValue` with `value` whenever `value` changes
   useEffect(() => {
     if (!isEditing) {
       setInputValue(value);
     }
   }, [value, isEditing]);
 
-  // Fetch suggestions from the API
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (inputValue.trim().length > 0) {
@@ -57,7 +55,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
     }
   }, [inputValue, isEditing, API_URL]);
 
-  // Handle click outside to close the dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -69,7 +66,6 @@ const LocationInput: React.FC<LocationInputProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [value]);
 
-  // FIX: Ensure input clears when clicked
   const handleDisplayClick = () => {
     setIsEditing(true);
     setInputValue('');
@@ -86,10 +82,10 @@ const LocationInput: React.FC<LocationInputProps> = ({
   };
 
   const handleSuggestionClick = (airport: Airport) => {
-    onChange(airport.city, airport.airportName, airport.code);
+    onChange(airport.city, airport.airportName, airport.code); // ✅ Pass airport code directly
     setInputValue(`${airport.city} - ${airport.code}`);
     setIsEditing(false);
-  };
+  };  
 
   return (
     <div className="relative p-4" ref={containerRef}>

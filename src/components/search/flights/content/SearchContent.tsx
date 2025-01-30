@@ -68,11 +68,14 @@ const SearchContent: React.FC = () => {
 
   const searchData = {
     fromCity,
+    fromAirportCode,  // ✅ Now storing airport code
     toCity,
+    toAirportCode,  // ✅ Now storing airport code
     departureDate: departureDateState,
     returnDate: returnDateState,
     travelers,
   };
+  
 
   if (tripType === 'multiCity') {
     return (
