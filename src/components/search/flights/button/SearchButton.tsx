@@ -26,6 +26,11 @@ const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButt
   const router = useRouter();
   const { tripType } = useTripType();
 
+  // ✅ Function to format dates correctly to prevent timezone issues
+  const formatDate = (date?: Date) => {
+    return date ? date.toLocaleDateString('en-CA') : ""; // 'en-CA' ensures 'YYYY-MM-DD' format
+  };
+
   const handleSearch = async () => {
     console.log('🛫 Search button clicked');
     console.log('🔍 Search Data:', searchData);
@@ -45,13 +50,13 @@ const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButt
     const fromCode = searchData.fromAirportCode || "DAC";
     const toCode = searchData.toAirportCode || "CGP";
 
-    // Construct URL parameters
+    // ✅ Updated: Use `formatDate` function to avoid timezone shift issues
     const params = new URLSearchParams({
       tripType,
       from: fromCode,
       to: toCode,
-      departure: searchData.departureDate?.toISOString().split('T')[0] || "",
-      return: searchData.returnDate?.toISOString().split('T')[0] || "",
+      departure: formatDate(searchData.departureDate),
+      return: formatDate(searchData.returnDate),
       travelers: String(searchData.travelers || 1)
     });
 
