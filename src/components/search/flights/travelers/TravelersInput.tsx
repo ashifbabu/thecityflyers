@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-// import { ChevronDownIcon } from '@heroicons/react/20/solid'; // or @heroicons/react/24/solid
+import { ChevronDownIcon } from '@heroicons/react/20/solid'; // or @heroicons/react/24/solid
 
 
 interface TravelersInputProps {
@@ -74,7 +74,7 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
 
           {/* Right Section: Chevron Icon */}
           <div className="text-gray-500 dark:text-gray-400">
-            <ChevronDown size={20} />
+            <ChevronDownIcon className="h-5 w-5" />
           </div>
         </button>
 

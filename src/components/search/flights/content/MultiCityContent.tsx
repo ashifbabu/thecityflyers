@@ -262,10 +262,17 @@ const MultiCityContent = ({
 
       {/* Search Button */}
       <div className="flex justify-center w-full">
-        <SearchButton 
-          searchData={{ flights }}
+      <SearchButton 
+          searchData={{
+            fromCity: flights[0]?.fromCity,
+            toCity: flights[0]?.toCity,
+            fromAirportCode: flights[0]?.fromAirport,
+            toAirportCode: flights[0]?.toAirport,
+            departureDate: flights[0]?.departureDate,
+            travelers: initialTravelers
+          }}
           onError={handleSearchErrors}
-          buttonText="Search Flights"
+          buttonText="Search"
         />
       </div>
     </div>
