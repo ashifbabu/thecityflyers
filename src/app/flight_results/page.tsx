@@ -1,103 +1,167 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ModifySearch from '@/components/search/flights/modify/ModifySearch';
-import FlightCalendarSection from '@/components/search/flights/calendar/FlightCalendarSection';
 import FlightResultsList from '@/components/search/flights/results/FlightResultsList';
+import { getApiTripType } from '@/components/search/flights/button/SearchButton';
 
-// City-to-Airport Code Mapping
-const CITY_TO_AIRPORT: Record<string, string> = {
-  "Dhaka": "DAC",
-  "Chittagong": "CGP",
-  "Sylhet": "ZYL",
-  "Cox's Bazar": "CXB",
-  "Jessore": "JSR",
-  "Saidpur": "SPD",
-  "Barisal": "BZL"
-};
+interface FlightSegment {
+  fromCode: string;
+  toCode: string;
+  date: string;
+}
+
+interface Passenger {
+  paxID: string;
+  ptc: string;
+}
 
 const FlightResultsPage = () => {
   const searchParams = useSearchParams();
-  const [departureDate, setDepartureDate] = useState<Date | undefined>(
-    searchParams.get('departure') ? new Date(searchParams.get('departure')!) : undefined
-  );
-  const [returnDate, setReturnDate] = useState<Date | undefined>(
-    searchParams.get('return') ? new Date(searchParams.get('return')!) : undefined
-  );
-  const [flights, setFlights] = useState<any[]>([]);
-
-  // Load flights from search params
-  useEffect(() => {
-    const flightsParam = searchParams.get('flights');
-    if (flightsParam) {
-      try {
-        setFlights(JSON.parse(flightsParam).flights);
-      } catch (error) {
-        console.error('Error parsing flight results:', error);
-      }
-    }
-  }, [searchParams]);
-
   const [flightResults, setFlightResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const isFirstRender = useRef(true);
+
+  // Format date to YYYY-MM-DD
+  const formatDate = (dateStr?: string): string | undefined => {
+    if (!dateStr) return undefined;
+    const date = new Date(dateStr);
+    return date.toISOString().split('T')[0];
+  };
+
+  // Parse flight segments from URL parameters
+  const parseFlightSegments = (): FlightSegment[] => {
+    const tripType = searchParams.get('tripType');
+    const segments: FlightSegment[] = [];
+
+    if (tripType === 'multiCity') {
+      // Parse multiple segments from URL
+      let segmentIndex = 1;
+      while (true) {
+        const fromCode = searchParams.get(`from${segmentIndex}`);
+        const toCode = searchParams.get(`to${segmentIndex}`);
+        const date = searchParams.get(`date${segmentIndex}`);
+
+        if (!fromCode || !toCode || !date) break;
+
+        segments.push({
+          fromCode: fromCode.trim(),
+          toCode: toCode.trim(),
+          date: formatDate(date) || ''
+        });
+
+        segmentIndex++;
+      }
+    } else {
+      // Handle one-way and round trips
+      const fromCode = searchParams.get('from');
+      const toCode = searchParams.get('to');
+      const departureDate = searchParams.get('departure');
+      const returnDate = searchParams.get('return');
+
+      if (fromCode && toCode && departureDate) {
+        segments.push({
+          fromCode: fromCode.trim(),
+          toCode: toCode.trim(),
+          date: formatDate(departureDate) || ''
+        });
+
+        // Add return segment for round trips
+        if (tripType === 'roundTrip' && returnDate) {
+          segments.push({
+            fromCode: toCode.trim(),
+            toCode: fromCode.trim(),
+            date: formatDate(returnDate) || ''
+          });
+        }
+      }
+    }
+
+    return segments;
+  };
+
+  // Parse passengers from URL parameters
+  const parsePassengers = (): Passenger[] => {
+    const passengers: Passenger[] = [];
+    const adults = parseInt(searchParams.get('adults') || '1');
+    const children = parseInt(searchParams.get('children') || '0');
+    const infants = parseInt(searchParams.get('infants') || '0');
+
+    // Add adult passengers
+    for (let i = 0; i < adults; i++) {
+      passengers.push({
+        paxID: `PAX${passengers.length + 1}`,
+        ptc: 'ADT'
+      });
+    }
+
+    // Add child passengers
+    for (let i = 0; i < children; i++) {
+      passengers.push({
+        paxID: `PAX${passengers.length + 1}`,
+        ptc: 'C05' // Assuming age 5, adjust as needed
+      });
+    }
+
+    // Add infant passengers
+    for (let i = 0; i < infants; i++) {
+      passengers.push({
+        paxID: `PAX${passengers.length + 1}`,
+        ptc: 'INF'
+      });
+    }
+
+    return passengers;
+  };
 
   useEffect(() => {
     const fetchFlights = async () => {
-      // Skip the first render if it's a navigation from search
-      if (isFirstRender.current) {
-        isFirstRender.current = false;
-        const fromCache = sessionStorage.getItem('flightResults');
-        if (fromCache) {
-          setFlightResults(JSON.parse(fromCache));
-          setLoading(false);
-          return;
-        }
-      }
-
       setLoading(true);
       try {
-        const fromCity = searchParams.get('from') || "Dhaka";
-        const toCity = searchParams.get('to') || "Chittagong";
-        const departureDateParam = searchParams.get('departure') || new Date().toISOString().split('T')[0];
+        // Check if we have a stored request from the search button
+        const storedRequest = sessionStorage.getItem('lastFlightRequest');
+        let requestBody;
 
-        const fromCode = CITY_TO_AIRPORT[fromCity] || "DAC";
-        const toCode = CITY_TO_AIRPORT[toCity] || "CGP";
+        if (storedRequest) {
+          requestBody = JSON.parse(storedRequest);
+          // Clear the stored request to prevent reuse
+          sessionStorage.removeItem('lastFlightRequest');
+        } else {
+          // Fallback to constructing request from URL parameters
+          const segments = parseFlightSegments();
+          const passengers = parsePassengers();
+          const tripType = searchParams.get('tripType');
 
-        const requestBody = {
-          pointOfSale: "BD",
-          source: "all",
-          request: {
-            originDest: [
-              {
+          if (segments.length === 0) {
+            console.error('No valid flight segments found');
+            return;
+          }
+
+          requestBody = {
+            pointOfSale: "BD",
+            source: "all",
+            request: {
+              originDest: segments.map(segment => ({
                 originDepRequest: {
-                  iatA_LocationCode: fromCode,
-                  date: departureDateParam
+                  iatA_LocationCode: segment.fromCode,
+                  date: segment.date
                 },
                 destArrivalRequest: {
-                  iatA_LocationCode: toCode
+                  iatA_LocationCode: segment.toCode
                 }
+              })),
+              pax: passengers,
+              shoppingCriteria: {
+                tripType: getApiTripType(tripType as any),
+                travelPreferences: {
+                  vendorPref: [],
+                  cabinCode: searchParams.get('cabinClass') || "Economy"
+                },
+                returnUPSellInfo: true
               }
-            ],
-            pax: [
-              {
-                paxID: "PAX1",
-                ptc: "ADT"
-              }
-            ],
-            shoppingCriteria: {
-              tripType: searchParams.get('tripType') || "oneWay",
-              travelPreferences: {
-                vendorPref: [],
-                cabinCode: "Economy"
-              },
-              returnUPSellInfo: true
             }
-          }
-        };
-
-        console.log("🚀 Sending Request Body:", JSON.stringify(requestBody, null, 2));
+          };
+        }
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/combined/search`, {
           method: 'POST',
@@ -106,17 +170,15 @@ const FlightResultsPage = () => {
         });
 
         if (!response.ok) {
-          throw new Error(`Server error: ${response.status} - ${await response.text()}`);
+          throw new Error(`Server error: ${response.status}`);
         }
 
         const result = await response.json();
-        console.log('✅ Flight Search Response:', result);
-
         setFlightResults(result.flights || []);
-        // Cache the results
         sessionStorage.setItem('flightResults', JSON.stringify(result.flights || []));
       } catch (error) {
-        console.error("❌ Error fetching flights:", error);
+        console.error("Error fetching flights:", error);
+        setFlightResults([]);
       }
       setLoading(false);
     };
@@ -128,22 +190,19 @@ const FlightResultsPage = () => {
     <div className="container mx-auto p-4 space-y-6">
       <ModifySearch />
       
-      <FlightCalendarSection
-        departureDate={departureDate}
-        returnDate={returnDate}
-        onDepartureDateSelect={setDepartureDate}
-        onReturnDateSelect={setReturnDate}
-      />
-
       <div className="bg-white dark:bg-black p-6 rounded-lg border border-gray-200 dark:border-gray-800">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Flight Results</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          Flight Results
+        </h2>
         
         {loading ? (
           <p className="text-gray-600 dark:text-gray-400">Loading flight results...</p>
         ) : flightResults.length > 0 ? (
           <FlightResultsList flights={flightResults} />
         ) : (
-          <p className="text-gray-600 dark:text-gray-400">No flights found for your search criteria.</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            No flights found for your search criteria.
+          </p>
         )}
       </div>
     </div>

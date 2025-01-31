@@ -86,7 +86,10 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useTripType } from '@/hooks/use-trip-type';
 import { validateFlightSearch } from '@/lib/validations';
-import type { FlightSearchError } from '@/types/flight';
+import type { FlightSearchError, TripType } from '@/types/flight';
+
+// Define API trip type mapping
+type ApiTripType = 'Oneway' | 'Return' | 'Circle';
 
 interface SearchButtonProps {
   onError?: (errors: FlightSearchError[]) => void;
@@ -102,12 +105,30 @@ interface SearchButtonProps {
   buttonText?: string;
 }
 
-
+// Export getApiTripType to share with other components
+export const getApiTripType = (type: TripType): ApiTripType => {
+  switch (type) {
+    case 'roundTrip':
+      return 'Return';
+    case 'multiCity':
+      return 'Circle';
+    case 'oneWay':
+      return 'Oneway';
+    default:
+      return 'Oneway';
+  }
+};
 
 const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButtonProps) => {
   const router = useRouter();
   const { tripType } = useTripType();
   const [loading, setLoading] = useState(false);
+
+  // Format date to YYYY-MM-DD
+  const formatDate = (date?: Date) => {
+    if (!date) return undefined;
+    return date.toISOString().split('T')[0];
+  };
 
   const handleSearch = async () => {
     console.log('🛫 Search button clicked');
@@ -124,19 +145,80 @@ const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButt
       return;
     }
 
-    // Use airport codes instead of city names
-    const fromCode = searchData.fromAirportCode || "DAC";
-    const toCode = searchData.toAirportCode || "CGP";
+    const fromCode = searchData.fromAirportCode || "";
+    const toCode = searchData.toAirportCode || "";
+
+    console.log("📌 Selected From Code:", fromCode);
+    console.log("📌 Selected To Code:", toCode);
+
+    // Validate required fields
+    if (!fromCode || !toCode) {
+      console.error("❌ ERROR: Airport codes are missing!");
+      return;
+    }
+
+    // Construct the request body based on trip type
+    const requestBody = {
+      pointOfSale: "BD",
+      source: "all",
+      request: {
+        originDest: [
+          {
+            originDepRequest: {
+              iatA_LocationCode: fromCode,
+              date: formatDate(searchData.departureDate)
+            },
+            destArrivalRequest: {
+              iatA_LocationCode: toCode
+            }
+          }
+        ],
+        pax: [
+          {
+            paxID: "PAX1",
+            ptc: "ADT"
+          }
+        ],
+        shoppingCriteria: {
+          tripType: getApiTripType(tripType),
+          travelPreferences: {
+            vendorPref: [],
+            cabinCode: "Economy"
+          },
+          returnUPSellInfo: true
+        }
+      }
+    };
+
+    // Add return flight segment for round trips
+    if (tripType === 'roundTrip' && searchData.returnDate) {
+      requestBody.request.originDest.push({
+        originDepRequest: {
+          iatA_LocationCode: toCode,
+          date: formatDate(searchData.returnDate)
+        },
+        destArrivalRequest: {
+          iatA_LocationCode: fromCode
+        }
+      });
+    }
+
+    // Store the request in sessionStorage for the results page
+    sessionStorage.setItem('lastFlightRequest', JSON.stringify(requestBody));
 
     // Construct URL parameters
     const params = new URLSearchParams({
-      tripType,
+      tripType: tripType,
       from: fromCode,
       to: toCode,
-      departure: searchData.departureDate?.toISOString().split('T')[0] || "",
-      return: searchData.returnDate?.toISOString().split('T')[0] || "",
+      departure: formatDate(searchData.departureDate) || '',
       travelers: String(searchData.travelers || 1)
     });
+
+    // Add return date for round trips
+    if (tripType === 'roundTrip' && searchData.returnDate) {
+      params.append('return', formatDate(searchData.returnDate) || '');
+    }
 
     router.push(`/flight_results?${params.toString()}`);
   };
