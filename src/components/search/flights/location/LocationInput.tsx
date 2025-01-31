@@ -11,7 +11,7 @@ interface LocationInputProps {
   type: 'from' | 'to';
   value: string;
   subValue: string;
-  onChange: (city: string, airportName: string, code: string) => void; // Pass IATA Code
+  onChange: (city: string, airportName: string, code: string) => void;
 }
 
 const LocationInput: React.FC<LocationInputProps> = ({
@@ -24,10 +24,16 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const [inputValue, setInputValue] = useState(value);
   const [filteredSuggestions, setFilteredSuggestions] = useState<Airport[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // 🔍 Fetch suggestions from the API
+  useEffect(() => {
+    if (!isEditing) {
+      setInputValue(value);
+    }
+  }, [value, isEditing]);
+
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (inputValue.trim().length > 0) {
@@ -44,12 +50,11 @@ const LocationInput: React.FC<LocationInputProps> = ({
     };
 
     if (isEditing) {
-      const debounceTimeout = setTimeout(() => fetchSuggestions(), 300); // Debounce API call
+      const debounceTimeout = setTimeout(() => fetchSuggestions(), 300);
       return () => clearTimeout(debounceTimeout);
     }
   }, [inputValue, isEditing, API_URL]);
 
-  // Handle click outside to close the dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -63,21 +68,24 @@ const LocationInput: React.FC<LocationInputProps> = ({
 
   const handleDisplayClick = () => {
     setIsEditing(true);
-    setInputValue(value);
+    setInputValue('');
+
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
 
-  // ✅ Update this function to pass the correct airport details
-  // ✅ Update function to pass correct airport details
   const handleSuggestionClick = (airport: Airport) => {
-    console.log(`📌 Selected Airport: ${airport.city} (${airport.code})`);
-    onChange(airport.city, airport.airportName, airport.code); // Pass IATA Code
-    setInputValue(airport.city);
+    onChange(airport.city, airport.airportName, airport.code); // ✅ Pass airport code directly
+    setInputValue(`${airport.city} - ${airport.code}`);
     setIsEditing(false);
-  };
+  };  
 
   return (
     <div className="relative p-4" ref={containerRef}>
@@ -100,11 +108,14 @@ const LocationInput: React.FC<LocationInputProps> = ({
             {type === 'from' ? 'From' : 'To'}
           </div>
           <input
+            ref={inputRef}
             type="text"
             className="w-full py-2 px-3 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-600"
             placeholder="Type the airport name or airport code"
             value={inputValue}
+            onFocus={() => setInputValue('')} 
             onChange={handleInputChange}
+            autoFocus
           />
           {filteredSuggestions.length > 0 && (
             <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-64 overflow-auto z-50">

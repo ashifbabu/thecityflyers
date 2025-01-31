@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, lazy, Suspense } from 'react';
-import { PlusCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PlusCircleIcon, XMarkIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import LocationInput from '../location/LocationInput';
 import DateInput from '../date/DateInput';
 import TravelersInput from '../travelers/TravelersInput';
 import SearchButton from '../button/SearchButton';
+import TripTypes from '../trip/TripTypes';
+import FareTypes from '../fare/FareTypes';
 import type { FlightSearchError } from '@/types/flight';
 
 interface Flight {
@@ -96,8 +98,28 @@ const MultiCityContent = ({
     setTimeout(() => setErrors([]), 5000);
   };
 
+  const swapLocations = (flightId: number) => {
+    setFlights(flights.map(flight => {
+      if (flight.id === flightId) {
+        return {
+          ...flight,
+          fromCity: flight.toCity,
+          fromAirport: flight.toAirport,
+          toCity: flight.fromCity,
+          toAirport: flight.fromAirport,
+        };
+      }
+      return flight;
+    }));
+  };
+
   return (
     <div className="w-full bg-white dark:bg-black p-6 space-y-6">
+      {/* Trip Types */}
+      <div className="mb-4">
+        <TripTypes />
+      </div>
+
       {/* Error Messages */}
       {errors.length > 0 && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -123,7 +145,7 @@ const MultiCityContent = ({
             )}
           >
             <div className="lg:col-span-5">
-              <div className="grid grid-rows-2 gap-0 rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
+              <div className="relative grid grid-rows-2 gap-0 rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
                 <div className="border-b border-gray-300 dark:border-gray-600">
                   <LocationInput
                     type="from"
@@ -148,11 +170,32 @@ const MultiCityContent = ({
                     });
                   }}
                 />
+                {/* Swap Button */}
+                <button
+                  type="button"
+                  onClick={() => swapLocations(flight.id)}
+                  aria-label="Swap locations"
+                  className={cn(
+                    'absolute right-20 top-1/2 -translate-y-1/2 z-10 rounded-full',
+                    'w-8 h-8',
+                    'bg-white dark:bg-black',
+                    'border border-gray-400 dark:border-gray-600',
+                    'flex items-center justify-center',
+                    'hover:bg-gray-100 dark:hover:bg-gray-800',
+                    'focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-700',
+                    'shadow-sm'
+                  )}
+                >
+                  <ArrowsRightLeftIcon
+                    className="h-4 w-4 text-gray-600 dark:text-gray-300"
+                    style={{ transform: 'rotate(90deg)' }}
+                  />
+                </button>
               </div>
             </div>
 
-            <div className="lg:col-span-4">
-              <div className="h-full bg-white dark:bg-black rounded-lg border border-gray-400 dark:border-gray-600">
+            <div className="lg:col-span-4 relative">
+              <div className="h-full bg-white dark:bg-black rounded-lg border border-gray-400 dark:border-gray-600 hover:shadow-md transition-all duration-200">
                 <DateInput
                   type="departure"
                   value={flight.departureDate?.toISOString().slice(0, 10) || 'Select date'}
@@ -210,6 +253,11 @@ const MultiCityContent = ({
         <div className="text-sm text-gray-500">
           {flights.length}/6 flights
         </div>
+      </div>
+
+      {/* Fare Types */}
+      <div className="mt-4">
+        <FareTypes />
       </div>
 
       {/* Search Button */}

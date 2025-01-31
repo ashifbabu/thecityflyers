@@ -27,7 +27,7 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
     setIsOpen(!isOpen);
   };
 
-  const handleTravelerChange = (type: string, value: number): void => {
+  const handleTravelerChange = (type: 'adults' | 'kids' | 'children' | 'infants', value: number): void => {
     if (type === 'adults') setAdults(value);
     if (type === 'kids') setKids(value);
     if (type === 'children') setChildren(value);
@@ -56,26 +56,32 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
 
   return (
     <div className="relative h-full">
-      <button
-        type="button"
-        className="bg-white dark:bg-black text-black dark:text-white p-4 shadow-sm cursor-pointer h-full w-full text-left rounded-md"
-        onClick={toggleModal}
-      >
-        <div className="text-sm text-gray-600 dark:text-gray-400">{value}</div>
-        <div className="text-lg font-semibold text-black dark:text-white">
-          {totalPassengers} Travelers
-        </div>
-        <div className="text-sm text-gray-600 dark:text-gray-400">{subValue}</div>
-        {/* ChevronDown Icon */}
-        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
-          
-        </div>
-      </button>
+        <button
+          type="button"
+          className="h-full w-full p-4 bg-white dark:bg-black text-black dark:text-white rounded-lg 
+                    cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 hover:shadow-md transition-all duration-200
+                    flex justify-between items-center"
+          onClick={toggleModal}
+        >
+          {/* Left Section: Text */}
+          <div className="flex flex-col justify-center items-start space-y-1">
+            <div className="text-sm text-gray-600 dark:text-gray-400">{value}</div>
+            <div className="text-lg font-semibold text-black dark:text-white">
+              {totalPassengers} Traveler{totalPassengers > 1 ? 's' : ''}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{subValue}</div>
+          </div>
+
+          {/* Right Section: Chevron Icon */}
+          <div className="text-gray-500 dark:text-gray-400">
+            <ChevronDown size={20} />
+          </div>
+        </button>
 
       {isOpen && (
         <div
           ref={modalRef}
-          className="absolute z-10 w-full bg-white dark:bg-black text-black dark:text-white shadow-lg mt-2 py-4 rounded-md"
+          className="absolute z-10 w-full bg-white dark:bg-black text-black dark:text-white shadow-lg mt-2 py-4 rounded-lg"
         >
           <div className="px-4">
             <div className="space-y-4">
@@ -159,8 +165,7 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
                 </div>
               </div>
             </div>
-
-            {/* Travel Class Section */}
+          {/* Travel Class Section */}
             <div className="mt-4">
               <div className="text-sm text-gray-600 dark:text-gray-400">Travel Class</div>
               <div className="flex space-x-2 mt-2">
@@ -180,29 +185,30 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
               </div>
             </div>
 
-            {/* Buttons: Reset and Done */}
-            <div className="mt-4 flex justify-end space-x-2">
-              {/* Reset Button */}
-              <button
-                onClick={() => {
-                  setAdults(1); // Reset Adults to 1
-                  setKids(0); // Reset Kids to 0
-                  setChildren(0); // Reset Children to 0
-                  setInfants(0); // Reset Infants to 0
-                  setTravelClass('Economy'); // Reset Travel Class to default
-                }}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-black dark:text-white rounded-md shadow-sm hover:bg-gray-400 dark:hover:bg-gray-500"
-              >
-                Reset
-              </button>
+          {/*Done & Reset Button */}
+            <div className="mt-4 text-right">
+              <div className="mt-4 flex justify-end space-x-2">
+                    <button
+                      onClick={() => {
+                        setAdults(1); // Reset Adults to 1
+                        setKids(0); // Reset Kids to 0
+                        setChildren(0); // Reset Children to 0
+                        setInfants(0); // Reset Infants to 0
+                        setTravelClass('Economy'); // Reset Travel Class to default
+                      }}
+                      className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-black dark:text-white rounded-md shadow-sm hover:bg-gray-400 dark:hover:bg-gray-500"
+                    >
+                      Reset
+                    </button>
 
-              {/* Done Button */}
-              <button
-                onClick={toggleModal}
-                className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-md shadow-sm hover:bg-gray-700 dark:hover:bg-gray-300"
-              >
-                Done
-              </button>
+                    {/* Done Button */}
+                    <button
+                      onClick={toggleModal}
+                      className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-md shadow-sm hover:bg-gray-700 dark:hover:bg-gray-300"
+                    >
+                      Done
+                    </button>
+              </div>
             </div>
           </div>
         </div>

@@ -26,13 +26,19 @@ interface Airport {
 const SearchContent: React.FC = () => {
   const [fromCity, setFromCity] = useState('DAC');
   const [fromAirport, setFromAirport] = useState('Hazrat Shahjalal International Airport');
-  const [toCity, setToCity] = useState('CGP');
+  const [fromAirportCode, setFromAirportCode] = useState('DAC');
+  const [toCity, setToCity] = useState('Chittagong');
   const [toAirport, setToAirport] = useState('Shah Amanat International');
+  const [toAirportCode, setToAirportCode] = useState('CGP');
   const [departureDateState, setDepartureDateState] = useState<Date | undefined>(undefined);
   const [returnDateState, setReturnDateState] = useState<Date | undefined>(undefined);
   const [travelers, setTravelers] = useState(1);
   const [errors, setErrors] = useState<FlightSearchError[]>([]);
   const { tripType, setTripType } = useTripType(); // Access trip type state
+
+  // States for calendar toggles
+  const [showDepartureCalendar, setShowDepartureCalendar] = useState(false);
+  const [showReturnCalendar, setShowReturnCalendar] = useState(false);
 
   const swapLocations = () => {
     setFromCity(toCity);
@@ -62,11 +68,14 @@ const SearchContent: React.FC = () => {
 
   const searchData = {
     fromCity,
+    fromAirportCode,  // ✅ Now storing airport code
     toCity,
+    toAirportCode,  // ✅ Now storing airport code
     departureDate: departureDateState,
     returnDate: returnDateState,
     travelers,
   };
+  
 
   if (tripType === 'multiCity') {
     return (
@@ -94,32 +103,37 @@ const SearchContent: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-1">
         {/* Location Selection */}
-        <div className="lg:col-span-5">
-          <div className="relative grid grid-rows-2 gap-0 rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
+        <div className="lg:col-span-5 h-full">
+          <div className="relative grid grid-rows-2 gap-0 h-full rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
             <Suspense fallback={<div className="h-24" />}>
               {/* From Section */}
-              <div className="border-b border-gray-300 dark:border-gray-600">
-                <LocationInput
-                  type="from"
-                  value={fromCity}
-                  subValue={fromAirport}
-                  onChange={(city, airportName, iataCode) => {
-                    setFromCity(iataCode); // Set IATA Code
-                    setFromAirport(airportName);
+              <div className="border-b border-gray-300 dark:border-gray-600 h-full">
+              <LocationInput
+                type="from"
+                value={fromCity}
+                subValue={fromAirport}
+                onChange={(city, airportName, code) => {
+                  setFromCity(city);
+                  setFromAirport(airportName);
+                  setFromAirportCode(code); // Store airport code
+                }}
+              />
+              </div>
+              {/* To Section */}
+              <div className="h-full">
+              <LocationInput
+                  type="to"
+                  value={toCity}
+                  subValue={toAirport}
+                  onChange={(city, airportName, code) => {
+                    setToCity(city);
+                    setToAirport(airportName);
+                    setToAirportCode(code); // Store airport code
                   }}
                 />
               </div>
-              {/* To Section */}
-              <LocationInput
-                type="to"
-                value={toCity}
-                subValue={toAirport}
-                 onChange={(city, airportName, iataCode) => {
-                  setToCity(iataCode); // Set IATA Code
-                  setToAirport(airportName);
-                }}
-              />
             </Suspense>
+
             {/* Swap Button */}
             <button
               type="button"
@@ -144,32 +158,45 @@ const SearchContent: React.FC = () => {
           </div>
         </div>
 
-        {/* Date Selection */}
-        <div className="lg:col-span-4">
-          <div className="grid grid-cols-2 gap-0 h-full bg-white dark:bg-black border border-gray-400 dark:border-gray-600 rounded-lg overflow-visible">
-            <Suspense fallback={<div className="h-24" />}>
-              <div className="border-r border-gray-400 dark:border-gray-600">
-                <DateInput
-                  type="departure"
-                  value={departureDateState ? departureDateState.toISOString().slice(0, 10) : 'Select date'}
-                  subValue=""
-                  selectedDate={departureDateState}
-                  onDateSelect={(type, date) => handleDateSelect(type, date)}
-                />
+            {/* Date Selection */}
+            <div className="lg:col-span-4">
+              <div className="grid grid-cols-2 h-full border border-gray-400 dark:border-gray-600 rounded-lg overflow-visible">
+                <Suspense fallback={<div className="h-full min-h-[120px]" />}>
+                  {/* Departure Box */}
+                  <div className="border-r border-gray-400 dark:border-gray-600">
+                    <DateInput
+                      type="departure"
+                      value={departureDateState ? departureDateState.toLocaleDateString('en-US', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      }) : 'Select date'}
+                      subValue={departureDateState ? departureDateState.toLocaleDateString('en-US', { weekday: 'long' }) : ''}
+                      selectedDate={departureDateState}
+                      onDateSelect={handleDateSelect}
+                      className="h-full"
+                    />
+                  </div>
+
+                  {/* Return Box */}
+                  <div>
+                    <DateInput
+                      type="return"
+                      value={returnDateState ? returnDateState.toLocaleDateString('en-US', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      }) : 'Select date'}
+                      subValue={returnDateState ? returnDateState.toLocaleDateString('en-US', { weekday: 'long' }) : ''}
+                      selectedDate={returnDateState}
+                      onDateSelect={handleDateSelect}
+                      departureDate={departureDateState}
+                      className="h-full"
+                    />
+                  </div>
+                </Suspense>
               </div>
-              <div>
-                <DateInput
-                  type="return"
-                  value={returnDateState ? returnDateState.toISOString().slice(0, 10) : 'Select date'}
-                  subValue=""
-                  selectedDate={returnDateState}
-                  onDateSelect={(type, date) => handleDateSelect(type, date)}
-                  departureDate={departureDateState}
-                />
-              </div>
-            </Suspense>
-          </div>
-        </div>
+            </div>
 
         {/* Travelers Selection */}
         <div className="lg:col-span-3 rounded-lg border border-gray-400 dark:border-gray-600 overflow-visible bg-white dark:bg-black">

@@ -1,3 +1,4 @@
+// Sidebar.tsx
 'use client';
 
 import React from 'react';
@@ -11,16 +12,6 @@ import MobileToggle from './MobileToggle';
 
 const Sidebar = () => {
   const { isCollapsed, isMobileOpen, toggleSidebar, toggleMobile, closeMobile } = useSidebar();
-
-  // Updated toggleSidebar function to handle submenu closing first
-  const handleSidebarToggle = () => {
-    const openSubmenus = document.querySelectorAll('.submenu-open');
-    if (openSubmenus.length > 0) {
-      openSubmenus.forEach((submenu) => submenu.classList.remove('submenu-open')); // Close all open submenus first
-    } else {
-      toggleSidebar(); // Collapse the sidebar if no submenu is open
-    }
-  };
 
   return (
     <>
@@ -40,27 +31,30 @@ const Sidebar = () => {
         id="sidebar"
         className={cn(
           "fixed top-0 left-0 z-40 h-screen transition-all duration-300",
-          "bg-white dark:bg-black border-r border-gray-200 dark:border-gray-700", // Light mode: white, Dark mode: black
-          isCollapsed ? "w-16" : "w-64",
+          "bg-white dark:bg-black border-r border-gray-200 dark:border-gray-700",
           "lg:sticky lg:top-16",
+          isCollapsed && !isMobileOpen ? "w-16" : "w-64",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <SidebarToggle onClick={handleSidebarToggle} />
-        <SidebarLogo isCollapsed={isCollapsed} />
+        <div className="h-full flex flex-col">
+          <SidebarToggle onClick={toggleSidebar} />
+          <SidebarLogo isCollapsed={isCollapsed && !isMobileOpen} />
 
-        {/* Navigation */}
-        <nav className="p-2 space-y-1 overflow-y-auto no-scrollbar">
-          {menuItems.map((item) => (
-            <MenuItem
-              key={item.href}
-              {...item}
-              isCollapsed={isCollapsed}
-              onClick={closeMobile}
-              toggleSidebar={toggleSidebar}
-            />
-          ))}
-        </nav>
+          {/* Navigation */}
+          <nav className="flex-1 p-2 space-y-1 overflow-y-auto no-scrollbar">
+            {menuItems.map((item) => (
+              <MenuItem
+                key={item.href}
+                {...item}
+                isCollapsed={isCollapsed && !isMobileOpen}
+                onClick={closeMobile}
+                toggleSidebar={toggleSidebar}
+                showText={!isCollapsed || isMobileOpen}
+              />
+            ))}
+          </nav>
+        </div>
       </aside>
     </>
   );

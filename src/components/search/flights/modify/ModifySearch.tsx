@@ -301,7 +301,7 @@ const ModifySearch = () => {
 
                 {/* Date Selection */}
                 <div className="lg:col-span-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 h-full border border-gray-400 dark:border-gray-700 rounded-lg overflow-hidden">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 h-full border border-gray-400 dark:border-gray-700 rounded-lg overflow-visible">
                     <div className={cn(
                       "h-full",
                       tripType === 'roundTrip' && "border-r border-gray-400 dark:border-gray-700"
