@@ -1,54 +1,91 @@
 'use client';
 
 import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plane, ChevronRight, Receipt, Briefcase, XCircle, Calendar, FileText } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FareFeaturesList } from '@/components/search/flights/results/FareFeaturesList';
 
-interface FlightCardProps {
-  airlineName: string;
-  flightNumber: string;
-  departureAirport: string;
-  departureTime: string;
-  arrivalAirport: string;
-  arrivalTime: string;
-  duration: string;
-  price: string;
-  airlineLogo: string;
-  refundable: boolean;
-}
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return {
+    time: date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase(),
+    date: date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+  };
+};
 
-const FlightCard: React.FC<FlightCardProps> = ({
-  airlineName,
-  flightNumber,
-  departureAirport,
-  departureTime,
-  arrivalAirport,
-  arrivalTime,
-  duration,
-  price,
-  airlineLogo,
-  refundable,
-}) => {
+const FlightSegment: React.FC<{ segment: any; type: 'outbound' | 'return'; }> = ({ segment, type }) => {
+  const formattedDeparture = formatDate(segment.From.DepartureTime);
+  const formattedArrival = formatDate(segment.To.ArrivalTime);
   return (
-    <div className="p-4 border border-gray-300 dark:border-gray-700 rounded-lg flex justify-between items-center">
-      <div className="flex items-center gap-4">
-        {airlineLogo && (
-          <img src={airlineLogo} alt={airlineName} className="w-12 h-12 object-contain rounded-md" />
-        )}
+    <div className="py-4">
+      <div className="text-sm font-medium mb-4">{type === 'outbound' ? 'Outbound' : 'Return'}</div>
+      <div className="flex justify-between items-center">
         <div>
-          <p className="font-semibold text-lg">{airlineName} - {flightNumber}</p>
-          <p className="text-gray-500 dark:text-gray-400">{departureTime} → {arrivalTime} ({duration})</p>
-          <p className="text-gray-500 dark:text-gray-400">{departureAirport} → {arrivalAirport}</p>
-          <p className={`text-sm ${refundable ? "text-green-600" : "text-red-500"}`}>
-            {refundable ? "Refundable" : "Non-Refundable"}
-          </p>
+          <div className="text-base text-muted-foreground">{segment.From.Name}</div>
+          <div className="text-lg font-bold">{segment.From.Code}</div>
+          <div className="text-3xl font-bold">{formattedDeparture.time}</div>
+        </div>
+        <div className="flex-1 flex flex-col items-center px-4">
+          <div className="text-sm text-muted-foreground">{segment.Duration}</div>
+          <div className="w-full h-px bg-border relative my-2">
+            <Plane className="w-4 h-4 absolute -top-2 right-0 text-primary" />
+          </div>
+          <div className="text-sm text-muted-foreground">Direct</div>
+        </div>
+        <div className="text-right">
+          <div className="text-base text-muted-foreground">{segment.To.Name}</div>
+          <div className="text-lg font-bold">{segment.To.Code}</div>
+          <div className="text-3xl font-bold">{formattedArrival.time}</div>
         </div>
       </div>
-      <div className="text-right">
-        <p className="text-xl font-bold">{price}</p>
-        <button className="mt-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-md hover:bg-gray-700 dark:hover:bg-gray-300 transition">
-          Select Flight
-        </button>
-      </div>
+      <div className="text-sm text-muted-foreground mt-2">{formattedDeparture.date}</div>
     </div>
+  );
+};
+
+const FlightCard: React.FC<{ offer: any }> = ({ offer }) => {
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex flex-col lg:flex-row">
+          <div className="flex-grow">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <img src={offer.Segments[0].Airline.Logo} alt={offer.Segments[0].Airline.Name} className="w-12 h-12" />
+                <div>
+                  <div className="font-semibold text-xl">{offer.Segments[0].Airline.Name}</div>
+                  <div className="text-sm text-muted-foreground">Flight {offer.Segments[0].FlightNumber}</div>
+                </div>
+              </div>
+              <div className="text-green-500 text-sm font-medium">{offer.Refundable ? 'Refundable' : 'Non-refundable'}</div>
+            </div>
+            <FlightSegment segment={offer.Segments[0]} type="outbound" />
+          </div>
+          <div className="w-full lg:w-80 mt-6 lg:mt-0 lg:ml-6 lg:pl-6 lg:border-l">
+            <Select defaultValue="economy">
+              <SelectTrigger>
+                <SelectValue placeholder="Select class" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="economy">Economy</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="first">First Class</SelectItem>
+              </SelectContent>
+            </Select>
+            <FareFeaturesList features={offer} />
+            <div className="mt-6 pt-6 border-t">
+              <div className="text-right mb-4">
+                <div className="text-3xl font-bold">{offer.Pricing[0].Currency} {offer.Pricing[0].Total.toFixed(2)}</div>
+                <div className="text-sm text-muted-foreground">Price per adult</div>
+              </div>
+              <Button size="lg" className="w-full">Select <ChevronRight className="ml-2 h-5 w-5" /></Button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

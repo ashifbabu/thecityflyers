@@ -35,7 +35,6 @@ const FlightResultsPage = () => {
     const segments: FlightSegment[] = [];
 
     if (tripType === 'multiCity') {
-      // Parse multiple segments from URL
       let segmentIndex = 1;
       while (true) {
         const fromCode = searchParams.get(`from${segmentIndex}`);
@@ -53,7 +52,6 @@ const FlightResultsPage = () => {
         segmentIndex++;
       }
     } else {
-      // Handle one-way and round trips
       const fromCode = searchParams.get('from');
       const toCode = searchParams.get('to');
       const departureDate = searchParams.get('departure');
@@ -66,7 +64,6 @@ const FlightResultsPage = () => {
           date: formatDate(departureDate) || ''
         });
 
-        // Add return segment for round trips
         if (tripType === 'roundTrip' && returnDate) {
           segments.push({
             fromCode: toCode.trim(),
@@ -87,28 +84,16 @@ const FlightResultsPage = () => {
     const children = parseInt(searchParams.get('children') || '0');
     const infants = parseInt(searchParams.get('infants') || '0');
 
-    // Add adult passengers
     for (let i = 0; i < adults; i++) {
-      passengers.push({
-        paxID: `PAX${passengers.length + 1}`,
-        ptc: 'ADT'
-      });
+      passengers.push({ paxID: `PAX${passengers.length + 1}`, ptc: 'ADT' });
     }
 
-    // Add child passengers
     for (let i = 0; i < children; i++) {
-      passengers.push({
-        paxID: `PAX${passengers.length + 1}`,
-        ptc: 'C05' // Assuming age 5, adjust as needed
-      });
+      passengers.push({ paxID: `PAX${passengers.length + 1}`, ptc: 'C05' });
     }
 
-    // Add infant passengers
     for (let i = 0; i < infants; i++) {
-      passengers.push({
-        paxID: `PAX${passengers.length + 1}`,
-        ptc: 'INF'
-      });
+      passengers.push({ paxID: `PAX${passengers.length + 1}`, ptc: 'INF' });
     }
 
     return passengers;
@@ -118,50 +103,33 @@ const FlightResultsPage = () => {
     const fetchFlights = async () => {
       setLoading(true);
       try {
-        // Check if we have a stored request from the search button
-        const storedRequest = sessionStorage.getItem('lastFlightRequest');
-        let requestBody;
+        const segments = parseFlightSegments();
+        const passengers = parsePassengers();
+        const tripType = searchParams.get('tripType');
 
-        if (storedRequest) {
-          requestBody = JSON.parse(storedRequest);
-          // Clear the stored request to prevent reuse
-          sessionStorage.removeItem('lastFlightRequest');
-        } else {
-          // Fallback to constructing request from URL parameters
-          const segments = parseFlightSegments();
-          const passengers = parsePassengers();
-          const tripType = searchParams.get('tripType');
-
-          if (segments.length === 0) {
-            console.error('No valid flight segments found');
-            return;
-          }
-
-          requestBody = {
-            pointOfSale: "BD",
-            source: "all",
-            request: {
-              originDest: segments.map(segment => ({
-                originDepRequest: {
-                  iatA_LocationCode: segment.fromCode,
-                  date: segment.date
-                },
-                destArrivalRequest: {
-                  iatA_LocationCode: segment.toCode
-                }
-              })),
-              pax: passengers,
-              shoppingCriteria: {
-                tripType: getApiTripType(tripType as any),
-                travelPreferences: {
-                  vendorPref: [],
-                  cabinCode: searchParams.get('cabinClass') || "Economy"
-                },
-                returnUPSellInfo: true
-              }
-            }
-          };
+        if (segments.length === 0) {
+          console.error("No valid flight segments found");
+          return;
         }
+
+        const requestBody = {
+          pointOfSale: "BD",
+          source: "all",
+          request: {
+            originDest: segments.map(segment => ({
+              originDepRequest: { iatA_LocationCode: segment.fromCode, date: segment.date },
+              destArrivalRequest: { iatA_LocationCode: segment.toCode }
+            })),
+            pax: passengers,
+            shoppingCriteria: {
+              tripType: getApiTripType(tripType as any),
+              travelPreferences: { vendorPref: [], cabinCode: searchParams.get("cabinClass") || "Economy" },
+              returnUPSellInfo: true
+            }
+          }
+        };
+
+        console.log("Final Request Body:", JSON.stringify(requestBody, null, 2));
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/combined/search`, {
           method: 'POST',
@@ -169,13 +137,19 @@ const FlightResultsPage = () => {
           body: JSON.stringify(requestBody)
         });
 
+        console.log("API Response Status:", response.status);
+
         if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
+          const errorText = await response.text();
+          throw new Error(`Server error: ${response.status} - ${errorText}`);
         }
 
         const result = await response.json();
+        console.log("API Response Data:", result);
+        
         setFlightResults(result.flights || []);
-        sessionStorage.setItem('flightResults', JSON.stringify(result.flights || []));
+        sessionStorage.setItem("flightResults", JSON.stringify(result.flights || []));
+
       } catch (error) {
         console.error("Error fetching flights:", error);
         setFlightResults([]);
@@ -189,20 +163,16 @@ const FlightResultsPage = () => {
   return (
     <div className="container mx-auto p-4 space-y-6">
       <ModifySearch />
-      
       <div className="bg-white dark:bg-black p-6 rounded-lg border border-gray-200 dark:border-gray-800">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Flight Results
         </h2>
-        
         {loading ? (
           <p className="text-gray-600 dark:text-gray-400">Loading flight results...</p>
         ) : flightResults.length > 0 ? (
           <FlightResultsList flights={flightResults} />
         ) : (
-          <p className="text-gray-600 dark:text-gray-400">
-            No flights found for your search criteria.
-          </p>
+          <p className="text-gray-600 dark:text-gray-400">No flights found for your search criteria.</p>
         )}
       </div>
     </div>

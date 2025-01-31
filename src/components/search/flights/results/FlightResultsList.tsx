@@ -14,29 +14,26 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
 
   return (
     <div className="space-y-4">
-      {flights.map((flight, index) => {
-        // Extract flight details based on source type (bdfare / flyhub)
-        const segment =
-          flight.Segments?.[0]?.Segments?.[0] || // For FlyHub
-          flight.Segments?.[0]; // For BD Fare
-
-        const price =
-          flight.Pricing?.TotalFare || // For FlyHub
-          flight.Pricing?.[0]?.Total; // For BD Fare
+      {flights.map((flight) => {
+        const segment = flight.Segments?.[0];
 
         return (
           <FlightCard 
-            key={index}
-            airlineName={segment?.Airline?.Name || "Unknown Airline"}
-            flightNumber={segment?.FlightNumber || "N/A"}
-            departureAirport={segment?.From?.Name || "Unknown Airport"}
-            departureTime={segment?.From?.DepartureTime || "Unknown Time"}
-            arrivalAirport={segment?.To?.Name || "Unknown Airport"}
-            arrivalTime={segment?.To?.ArrivalTime || "Unknown Time"}
-            duration={segment?.Duration || "N/A"}
-            price={`BDT ${price}` || "Price Not Available"}
-            airlineLogo={segment?.Airline?.Logo || ""}
-            refundable={flight.Refundable || false}
+            key={flight.OfferId}
+            offer={{
+              Segments: [segment],
+              Pricing: flight.Pricing,
+              Refundable: flight.Refundable,
+              Airline: segment?.Airline,
+              FlightNumber: segment?.FlightNumber,
+              Departure: segment?.From,
+              Arrival: segment?.To,
+              CabinClass: segment?.CabinClass,
+              Duration: segment?.Duration,
+              FareType: flight.FareType,
+              BaggageAllowance: flight.BaggageAllowance,
+              SeatsRemaining: flight.SeatsRemaining
+            }}
           />
         );
       })}
