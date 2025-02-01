@@ -40,6 +40,15 @@ const SearchContent: React.FC = () => {
   const [showDepartureCalendar, setShowDepartureCalendar] = useState(false);
   const [showReturnCalendar, setShowReturnCalendar] = useState(false);
 
+  const [travelersData, setTravelersData] = useState({
+        adults: 1,
+        kids: 0,
+        children: 0,
+        infants: 0,
+        totalPassengers: 1,
+        travelClass: 'Economy',
+      });
+
   const swapLocations = () => {
     setFromCity(toCity);
     setFromAirport(toAirport);
@@ -68,12 +77,20 @@ const SearchContent: React.FC = () => {
 
   const searchData = {
     fromCity,
-    fromAirportCode,  // ✅ Now storing airport code
+    fromAirportCode,
     toCity,
-    toAirportCode,  // ✅ Now storing airport code
+    toAirportCode,
     departureDate: departureDateState,
     returnDate: returnDateState,
-    travelers,
+    travelers: {
+      adults: travelersData.adults,
+      kids: travelersData.kids,
+      children: travelersData.children,
+      infants: travelersData.infants,
+      totalPassengers: travelersData.totalPassengers,
+      travelClass: travelersData.travelClass,
+    }, // ✅ Object format
+    travelClass: travelersData.travelClass,
   };
   
 
@@ -202,9 +219,10 @@ const SearchContent: React.FC = () => {
         <div className="lg:col-span-3 rounded-lg border border-gray-400 dark:border-gray-600 overflow-visible bg-white dark:bg-black">
           <Suspense fallback={<div className="h-24" />}>
             <TravelersInput
-              value={`${travelers} Traveler${travelers > 1 ? 's' : ''}`}
-              subValue="Economy"
+              value={`${travelersData.totalPassengers} Traveler${travelersData.totalPassengers > 1 ? 's' : ''}`} // Modified: Display total travelers
+              subValue={travelersData.travelClass} // Modified: Display selected travel class
               onClick={() => console.log('Open travelers modal')}
+              onChange={(data) => setTravelersData(data)} // Added: Update travelers data
             />
           </Suspense>
         </div>

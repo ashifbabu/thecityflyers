@@ -44,7 +44,14 @@ const ModifySearch = () => {
     returnDate: searchParams.get('returnDate')
       ? new Date(searchParams.get('returnDate')!)
       : undefined,
-    travelers: parseInt(searchParams.get('travelers') || '1', 10),
+    travelers: {
+      adults: 1,
+      kids: 0,
+      children: 0,
+      infants: 0,
+      totalPassengers: 1,
+      travelClass: 'Economy',
+    },
     class: searchParams.get('class') || 'Economy',
     fareType: searchParams.get('fareType') || 'regular',
     flights: parseFlights()
@@ -136,7 +143,7 @@ const ModifySearch = () => {
 
     // Update URL and trigger search
     router.push(`/flight_results?${params.toString()}`);
-    setIsExpanded(false); // Collapse after search
+    setIsExpanded(false);// Collapse after search
   };
 
   return (
@@ -183,7 +190,7 @@ const ModifySearch = () => {
 
           {/* Travelers and Class */}
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            <span>{searchData.travelers} Traveler{searchData.travelers > 1 ? 's' : ''}</span>
+          <span>{searchData.travelers.totalPassengers} Traveler{searchData.travelers.totalPassengers > 1 ? 's' : ''}</span>
             <span> • </span>
             <span>{searchData.class}</span>
           </div>
@@ -239,9 +246,9 @@ const ModifySearch = () => {
 
           {tripType === 'multiCity' ? (
             <MultiCityContent 
-              initialFlights={searchData.flights}
-              initialTravelers={searchData.travelers}
-              initialClass={searchData.class}
+            initialFlights={searchData.flights}
+            initialTravelers={searchData.travelers.totalPassengers} // ✅ Fixed: Passing totalPassengers instead of the whole travelers object
+            initialClass={searchData.class}
             />
           ) : (
             <>
@@ -340,11 +347,19 @@ const ModifySearch = () => {
                 {/* Travelers Selection */}
                 <div className="lg:col-span-3">
                   <div className="h-full rounded-lg border border-gray-400 dark:border-gray-700 bg-white dark:bg-black">
-                    <TravelersInput
-                      value={`${searchData.travelers} Traveler${searchData.travelers > 1 ? 's' : ''}`}
-                      subValue={searchData.class}
-                      onClick={() => {/* Handle travelers modal */}}
-                    />
+                  <TravelersInput
+                        value={`${searchData.travelers.totalPassengers} Traveler${searchData.travelers.totalPassengers > 1 ? 's' : ''}`}
+                        subValue={searchData.class}
+                        onClick={() => {
+                          console.log('Traveler selection clicked!');
+                        }}
+                        onChange={(updatedTravelers) => {
+                          setSearchData((prev) => ({
+                            ...prev,
+                            travelers: { ...prev.travelers, ...updatedTravelers }, // ✅ Fixed: Added missing onChange handler
+                          }));
+                        }}
+                      />
                   </div>
                 </div>
               </div>
@@ -356,11 +371,11 @@ const ModifySearch = () => {
 
               {/* Search Button */}
               <div className="mt-4 flex justify-center">
-                <SearchButton
-                  searchData={searchData}
-                  onError={handleSearchErrors}
-                  buttonText="Search Flights"
-                />
+              <SearchButton
+                searchData={searchData}
+                onError={handleSearchErrors}
+                buttonText="Search Flights"
+              />
               </div>
             </>
           )}

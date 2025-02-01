@@ -12,31 +12,27 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
     return <p className="text-gray-600 dark:text-gray-400">No flights available for this search.</p>;
   }
 
-        return (
-          <div className="space-y-4">
-            {flights.map((flight, index) => {
-        const segment = flight.Segments?.[0];
-
-        return (
-          <FlightCard 
-            key={flight.OfferId || `${segment?.FlightNumber}-${index}`}  // Fallback key
-            offer={{
-              Segments: [segment],
-              Pricing: flight.Pricing,
-              Refundable: flight.Refundable,
-              Airline: segment?.Airline,
-              FlightNumber: segment?.FlightNumber,
-              Departure: segment?.From,
-              Arrival: segment?.To,
-              CabinClass: segment?.CabinClass,
-              Duration: segment?.Duration,
-              FareType: flight.FareType,
-              BaggageAllowance: flight.BaggageAllowance,
-              SeatsRemaining: flight.SeatsRemaining
-            }}
-          />
-        );
-      })}
+  return (
+    <div className="space-y-4">
+      {flights.map((flight, index) => (
+        <FlightCard
+          key={flight.OfferId || `${flight.Segments[0]?.FlightNumber}-${index}`}
+          offer={{
+            Segments: flight.Segments, // Send all segments
+            Pricing: flight.Pricing,   // Send all pricing details
+            Refundable: flight.Refundable,
+            Airline: flight.Segments[0]?.Airline,
+            FlightNumber: flight.Segments[0]?.FlightNumber,
+            Departure: flight.Segments[0]?.From,
+            Arrival: flight.Segments[0]?.To,
+            CabinClass: flight.Segments[0]?.CabinClass,
+            Duration: flight.Segments[0]?.Duration,
+            FareType: flight.FareType,
+            BaggageAllowance: flight.BaggageAllowance,
+            SeatsRemaining: flight.SeatsRemaining,
+          }}
+        />
+      ))}
     </div>
   );
 };

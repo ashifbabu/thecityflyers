@@ -15,10 +15,20 @@ const FlightSearch = () => {
     toCity: '',
     departureDate: undefined as Date | undefined,
     returnDate: undefined as Date | undefined,
-    travelers: 1,
+    travelers: {
+      adults: 1,                 // ✅ Default to 1 adult
+      kids: 0,                   // ✅ Default to 0 kids
+      children: 0,               // ✅ Default to 0 children
+      infants: 0,                // ✅ Default to 0 infants
+      totalPassengers: 1,        // ✅ Matches the sum of all travelers
+      travelClass: 'Economy',    // ✅ Default travel class
+    },
     fareType: 'economy',
     flights: [],
   });
+  
+
+  
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6">

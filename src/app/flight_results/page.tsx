@@ -80,25 +80,32 @@ const FlightResultsPage = () => {
   // Parse passengers from URL parameters
   const parsePassengers = (): Passenger[] => {
     const passengers: Passenger[] = [];
-    const adults = parseInt(searchParams.get('adults') || '1');
-    const children = parseInt(searchParams.get('children') || '0');
-    const infants = parseInt(searchParams.get('infants') || '0');
-
+  
+    const adults = parseInt(searchParams.get('adults') || '1');      // ✅ Correct
+    const kids = parseInt(searchParams.get('kids') || '0');          // ✅ Correct
+    const children = parseInt(searchParams.get('children') || '0');  // ✅ Correct
+    const infants = parseInt(searchParams.get('infants') || '0');    // ✅ Correct
+  
+    const totalChildren = kids + children;  // ✅ Merge kids & children
+  
+    let paxCounter = 1;
+  
     for (let i = 0; i < adults; i++) {
-      passengers.push({ paxID: `PAX${passengers.length + 1}`, ptc: 'ADT' });
+      passengers.push({ paxID: `PAX${paxCounter++}`, ptc: 'ADT' });
     }
-
-    for (let i = 0; i < children; i++) {
-      passengers.push({ paxID: `PAX${passengers.length + 1}`, ptc: 'C05' });
+  
+    for (let i = 0; i < totalChildren; i++) {
+      passengers.push({ paxID: `PAX${paxCounter++}`, ptc: 'CHD' });
     }
-
+  
     for (let i = 0; i < infants; i++) {
-      passengers.push({ paxID: `PAX${passengers.length + 1}`, ptc: 'INF' });
+      passengers.push({ paxID: `PAX${paxCounter++}`, ptc: 'INF' });
     }
-
+  
+    console.log("Generated Passenger List:", passengers);
     return passengers;
   };
-
+  
   useEffect(() => {
     const fetchFlights = async () => {
       setLoading(true);

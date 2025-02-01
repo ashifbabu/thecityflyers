@@ -62,6 +62,13 @@ const MultiCityContent = ({
       },
     ];
   });
+  const [travelersData, setTravelersData] = useState({
+    adults: 1,
+    children: 0,
+    infants: 0,
+    totalPassengers: 1,
+    travelClass: 'Economy',
+  });
 
   const [errors, setErrors] = useState<FlightSearchError[]>([]);
 
@@ -211,9 +218,10 @@ const MultiCityContent = ({
             {index === 0 && (
               <div className="lg:col-span-3 rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-black">
                 <TravelersInput
-                  value={`${initialTravelers} Traveler${initialTravelers !== 1 ? 's' : ''}`}
-                  subValue={initialClass}
+                  value={`${travelersData.totalPassengers} Traveler${travelersData.totalPassengers !== 1 ? 's' : ''}`}
+                  subValue={travelersData.travelClass}
                   onClick={() => console.log('Open travelers modal')}
+                  onChange={(data) => setTravelersData(data)}  // ✅ Updates state when changed
                 />
               </div>
             )}
@@ -263,17 +271,24 @@ const MultiCityContent = ({
       {/* Search Button */}
       <div className="flex justify-center w-full">
       <SearchButton 
-          searchData={{
-            fromCity: flights[0]?.fromCity,
-            toCity: flights[0]?.toCity,
-            fromAirportCode: flights[0]?.fromAirport,
-            toAirportCode: flights[0]?.toAirport,
-            departureDate: flights[0]?.departureDate,
-            travelers: initialTravelers
-          }}
-          onError={handleSearchErrors}
-          buttonText="Search"
-        />
+            searchData={{
+              fromCity: flights[0]?.fromCity,
+              toCity: flights[0]?.toCity,
+              fromAirportCode: flights[0]?.fromAirport,
+              toAirportCode: flights[0]?.toAirport,
+              departureDate: flights[0]?.departureDate,
+              travelers: {
+                adults: initialTravelers || 1,       // ✅ Assuming all as adults
+                kids: 0,                             // ✅ Default if no data
+                children: 0,                         // ✅ Default if no data
+                infants: 0,                          // ✅ Default if no data
+                totalPassengers: initialTravelers || 1, // ✅ Total matches initialTravelers
+                travelClass: 'Economy'               // ✅ Default travel class
+              }
+            }}
+            onError={handleSearchErrors}
+            buttonText="Search"
+          />
       </div>
     </div>
   );
