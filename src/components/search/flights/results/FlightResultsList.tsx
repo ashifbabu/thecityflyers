@@ -12,14 +12,14 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
     return <p className="text-gray-600 dark:text-gray-400">No flights available for this search.</p>;
   }
 
-  return (
-    <div className="space-y-4">
-      {flights.map((flight) => {
+        return (
+          <div className="space-y-4">
+            {flights.map((flight, index) => {
         const segment = flight.Segments?.[0];
 
         return (
           <FlightCard 
-            key={flight.OfferId}
+            key={flight.OfferId || `${segment?.FlightNumber}-${index}`}  // Fallback key
             offer={{
               Segments: [segment],
               Pricing: flight.Pricing,

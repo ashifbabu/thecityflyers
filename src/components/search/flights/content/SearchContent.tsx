@@ -110,7 +110,7 @@ const SearchContent: React.FC = () => {
               <div className="border-b border-gray-300 dark:border-gray-600 h-full">
               <LocationInput
                 type="from"
-                value={fromCity}
+                value={`${fromCity} (${fromAirportCode})`}
                 subValue={fromAirport}
                 onChange={(city, airportName, code) => {
                   setFromCity(city);
@@ -123,7 +123,7 @@ const SearchContent: React.FC = () => {
               <div className="h-full">
               <LocationInput
                   type="to"
-                  value={toCity}
+                  value={`${toCity} (${toAirportCode})`}
                   subValue={toAirport}
                   onChange={(city, airportName, code) => {
                     setToCity(city);

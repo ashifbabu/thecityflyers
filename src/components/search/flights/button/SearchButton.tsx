@@ -160,7 +160,7 @@ const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButt
     // Construct the request body based on trip type
     const requestBody = {
       pointOfSale: "BD",
-      source: "all",
+      source: "bdfare",
       request: {
         originDest: [
           {

@@ -114,7 +114,7 @@ const FlightResultsPage = () => {
 
         const requestBody = {
           pointOfSale: "BD",
-          source: "all",
+          source: "bdfare",
           request: {
             originDest: segments.map(segment => ({
               originDepRequest: { iatA_LocationCode: segment.fromCode, date: segment.date },
