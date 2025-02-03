@@ -1,111 +1,311 @@
-'use client';
+'use client'
 
-import React from 'react';
+import React, { useState } from 'react'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Plane, ChevronRight, Luggage, Clock, CalendarDays, Utensils, Armchair, BaggageClaim, Receipt, Ban } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-interface Flight {
+interface FlightSegment {
+  From: {
+    Code: string;
+    Name: string;
+    DepartureTime: string;
+  };
+  To: {
+    Code: string;
+    Name: string;
+    ArrivalTime: string;
+  };
+  Airline: {
+    Name: string;
+    Code: string;
+    Logo: string;
+  };
+  FlightNumber: string;
+  CabinClass: string;
+  Duration: string;
+}
+
+interface FlightOffer {
   Source: string;
-  TraceId?: string;
-  OfferId?: string;
-  SearchId?: string;
-  ResultId?: string;
-  ValidatingCarrier?: string;
+  TraceId: string;
+  OfferId: string;
+  Segments: FlightSegment[];
+  Pricing: Array<{
+    PaxType: string;
+    Currency: string;
+    BaseFare: number;
+    Tax: number;
+    Total: number;
+    VAT: number;
+  }>;
+  BaggageAllowance: Array<{
+    From: string;
+    To: string;
+    CheckIn: Array<{
+      paxType: string;
+      allowance: string;
+    }>;
+    Cabin: Array<{
+      paxType: string;
+      allowance: string;
+    }>;
+  }>;
   Refundable: boolean;
   FareType: string;
-  Pricing: any;
-  Availability?: number;
-  Segments: any[];
-  BaggageAllowance?: { CheckIn?: { allowance?: string }[] }[];
+  SeatsRemaining: number;
 }
 
-interface FlightCardProps {
-  flight: Flight;
-}
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return {
+    time: date.toLocaleTimeString('en-US', { 
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).toUpperCase(),
+    date: date.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    })
+  };
+};
 
-const FlightCard: React.FC<FlightCardProps> = ({ flight }) => {
-  if (!flight.Segments || flight.Segments.length === 0) {
-    return <div className="p-4 text-red-500">No flight segment data available.</div>;
-  }
+const formatPrice = (amount: number) => {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+};
 
-  // Handle segment structure differences between BDFare and FlyHub
-  const segment =
-    flight.Segments[0]?.Segments?.[0] || // FlyHub nested segments
-    flight.Segments[0]; // BDFare direct segments
-
-  if (!segment || !segment.From || !segment.To) {
-    return <div className="p-4 text-red-500">Invalid flight segment data.</div>;
-  }
-
-  const airline = segment.Airline;
-
-  // ✅ Fix Pricing Extraction for BDFare & FlyHub
-  const pricing = Array.isArray(flight.Pricing)
-    ? flight.Pricing[0]?.Total || 0 // Extract BDFare pricing from array
-    : flight.Pricing?.TotalFare || 0; // Use FlyHub pricing format
-
-  // ✅ Extracting Baggage Information
-  const baggageInfo =
-    segment.Baggage ||
-    flight.BaggageAllowance?.[0]?.CheckIn?.[0]?.allowance ||
-    'N/A';
+const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
+  const firstSegment = offer.Segments[0];
+  const lastSegment = offer.Segments[offer.Segments.length - 1];
+  const isMultiSegment = offer.Segments.length > 1;
+  const totalDuration = offer.Segments.reduce((acc, segment) => {
+    const duration = parseInt(segment.Duration.split(' ')[0]);
+    return acc + duration;
+  }, 0);
 
   return (
-    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg shadow-md border border-gray-300 dark:border-gray-700">
-      {/* Airline Info */}
-      <div className="flex items-center space-x-3">
-        <img src={airline?.Logo || ''} alt={airline?.Name || 'Airline'} className="w-10 h-10 rounded-md" />
-        <h2 className="text-lg font-semibold">{airline?.Name || 'Unknown Airline'} ({airline?.Code || 'N/A'})</h2>
-      </div>
+    <Card className="overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex flex-col lg:flex-row lg:gap-6">
+          <div className="flex-grow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <img 
+                  src={firstSegment.Airline.Logo || "/placeholder.svg"} 
+                  alt={firstSegment.Airline.Name}
+                  className="w-12 h-12 object-contain"
+                />
+                <div>
+                  <div className="font-semibold text-xl">{firstSegment.Airline.Name}</div>
+                  <div className="text-sm text-muted-foreground">Flight {firstSegment.FlightNumber}</div>
+                </div>
+              </div>
+              {offer.Refundable && (
+                <span className="text-green-500 text-sm font-medium">Refundable</span>
+              )}
+            </div>
 
-      {/* Flight Route */}
-      <div className="flex justify-between items-center mt-4 border-b pb-2">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Departure</p>
-          <p className="text-lg font-bold">{segment.From.Code || 'N/A'}</p>
-          <p className="text-sm">{segment.From.Name || 'Unknown Airport'}</p>
-          <p className="text-sm font-semibold">
-            {segment.From.DepartureTime ? new Date(segment.From.DepartureTime).toLocaleString() : 'N/A'}
-          </p>
+            {isMultiSegment && (
+              <div className="text-sm font-medium mt-4">
+                {offer.Segments.length - 1} Stop
+              </div>
+            )}
+
+            <div className="mt-6">
+              {isMultiSegment && <div className="text-sm mb-2">Outbound</div>}
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="text-base text-muted-foreground">{firstSegment.From.Name}</div>
+                  <div className="text-lg font-bold">{firstSegment.From.Code}</div>
+                  <div className="text-3xl font-bold my-1">
+                    {formatDate(firstSegment.From.DepartureTime).time}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {formatDate(firstSegment.From.DepartureTime).date}
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center px-8">
+                  <div className="text-sm text-muted-foreground">
+                    {firstSegment.Duration} minutes
+                  </div>
+                  <div className="w-32 h-px bg-border relative my-2">
+                    <Plane className="w-4 h-4 absolute -top-2 right-0 text-primary" />
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Direct
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-base text-muted-foreground">{lastSegment.To.Name}</div>
+                  <div className="text-lg font-bold">{lastSegment.To.Code}</div>
+                  <div className="text-3xl font-bold my-1">
+                    {formatDate(lastSegment.To.ArrivalTime).time}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {formatDate(lastSegment.To.ArrivalTime).date}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full lg:w-80 mt-6 lg:mt-0 lg:border-l lg:pl-6">
+            <Select defaultValue={firstSegment.CabinClass.toLowerCase()}>
+              <SelectTrigger>
+                <SelectValue placeholder={firstSegment.CabinClass} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="economy">Economy</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="first">First Class</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Receipt className="w-4 h-4" />
+                <span>Cancellation Fee starting undefined</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BaggageClaim className="w-4 h-4" />
+                <span>Cabin Bag undefined</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Utensils className="w-4 h-4" />
+                <span>Meal Beverage</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CalendarDays className="w-4 h-4" />
+                <span>Pre Reserved Seat Assignment</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Armchair className="w-4 h-4" />
+                <span>Premium Seat</span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="text-right mb-4">
+                <div className="text-3xl font-bold">
+                  {offer.Pricing[0].Currency} {formatPrice(offer.Pricing[0].Total)}
+                </div>
+                <div className="text-sm text-muted-foreground">Price per adult</div>
+              </div>
+              <Button size="lg" className="w-full bg-black text-white dark:bg-white dark:text-black">
+                Select <ChevronRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </div>
         </div>
 
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Duration</p>
-          <p className="text-lg font-bold">{segment.Duration || 'N/A'}</p>
-        </div>
+        <Tabs defaultValue="flight-details" className="mt-6">
+          <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
+            <TabsTrigger 
+              value="flight-details"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            >
+              Flight Details
+            </TabsTrigger>
+            <TabsTrigger 
+              value="fare-summary"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            >
+              Fare Summary
+            </TabsTrigger>
+            <TabsTrigger 
+              value="baggage"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            >
+              Baggage
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="flight-details" className="mt-4">
+            <div className="space-y-6">
+              {offer.Segments.map((segment, index) => (
+                <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-muted/50 p-4 rounded-lg">
+                  <div className="mb-4 sm:mb-0">
+                    <div className="text-lg font-bold">{segment.From.Name}</div>
+                    <div className="text-xl font-bold">
+                      {formatDate(segment.From.DepartureTime).time}
+                    </div>
+                    <div className="text-lg font-bold">{segment.From.Code}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDate(segment.From.DepartureTime).date}
+                    </div>
+                  </div>
 
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Arrival</p>
-          <p className="text-lg font-bold">{segment.To.Code || 'N/A'}</p>
-          <p className="text-sm">{segment.To.Name || 'Unknown Airport'}</p>
-          <p className="text-sm font-semibold">
-            {segment.To.ArrivalTime ? new Date(segment.To.ArrivalTime).toLocaleString() : 'N/A'}
-          </p>
-        </div>
-      </div>
+                  <div className="flex flex-col items-center px-4 mb-4 sm:mb-0">
+                    <div className="text-sm text-muted-foreground mb-2">{segment.Duration}</div>
+                    <div className="w-32 sm:w-48 h-px bg-border relative">
+                      <Plane className="w-3 h-3 absolute -top-1.5 right-0 text-primary" />
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-2">
+                      {segment.Airline.Name} {segment.FlightNumber}
+                    </div>
+                  </div>
 
-      {/* Pricing & Baggage */}
-      <div className="mt-4 flex justify-between items-center">
-        <div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Price</p>
-          <p className="text-xl font-bold">{pricing.toLocaleString()} BDT</p>
-        </div>
-        <div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Baggage</p>
-          <p className="text-lg font-semibold">{baggageInfo}</p>
-        </div>
-      </div>
-
-      {/* Refundable & Seats Info */}
-      <div className="mt-4 flex justify-between">
-        <span className={`px-2 py-1 text-xs font-semibold rounded-md ${flight.Refundable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {flight.Refundable ? "Refundable" : "Non-Refundable"}
-        </span>
-        {flight.Availability && (
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            {flight.Availability} Seats Remaining
-          </span>
-        )}
-      </div>
-    </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold">{segment.To.Name}</div>
+                    <div className="text-xl font-bold">
+                      {formatDate(segment.To.ArrivalTime).time}
+                    </div>
+                    <div className="text-lg font-bold">{segment.To.Code}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDate(segment.To.ArrivalTime).date}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="fare-summary" className="mt-4">
+            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+              <div className="flex justify-between">
+                <span>Base Fare</span>
+                <span>{offer.Pricing[0].Currency} {formatPrice(offer.Pricing[0].BaseFare)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Tax</span>
+                <span>{offer.Pricing[0].Currency} {formatPrice(offer.Pricing[0].Tax)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>VAT</span>
+                <span>{offer.Pricing[0].Currency} {formatPrice(offer.Pricing[0].VAT)}</span>
+              </div>
+              <div className="flex justify-between font-bold border-t border-border mt-2 pt-2">
+                <span>Total</span>
+                <span>{offer.Pricing[0].Currency} {formatPrice(offer.Pricing[0].Total)}</span>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="baggage" className="mt-4">
+            <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">Check-in Baggage</h4>
+                <p>{offer.BaggageAllowance[0].CheckIn[0].allowance}</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Cabin Baggage</h4>
+                <p>{offer.BaggageAllowance[0].Cabin[0].allowance}</p>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 
