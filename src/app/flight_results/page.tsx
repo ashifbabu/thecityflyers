@@ -21,6 +21,7 @@ const FlightResultsPage = () => {
   const searchParams = useSearchParams();
   const [flightResults, setFlightResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Format date to YYYY-MM-DD
   const formatDate = (dateStr?: string): string | undefined => {
@@ -35,21 +36,23 @@ const FlightResultsPage = () => {
     const segments: FlightSegment[] = [];
 
     if (tripType === 'multiCity') {
-      let segmentIndex = 1;
-      while (true) {
-        const fromCode = searchParams.get(`from${segmentIndex}`);
-        const toCode = searchParams.get(`to${segmentIndex}`);
-        const date = searchParams.get(`date${segmentIndex}`);
-
-        if (!fromCode || !toCode || !date) break;
-
-        segments.push({
-          fromCode: fromCode.trim(),
-          toCode: toCode.trim(),
-          date: formatDate(date) || ''
-        });
-
-        segmentIndex++;
+      try {
+        const flightsParam = searchParams.get('flights');
+        if (flightsParam) {
+          const flights = JSON.parse(decodeURIComponent(flightsParam));
+          flights.forEach((flight: any) => {
+            if (flight.fromAirportCode && flight.toAirportCode && flight.departureDate) {
+              segments.push({
+                fromCode: flight.fromAirportCode,
+                toCode: flight.toAirportCode,
+                date: formatDate(flight.departureDate) || ''
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing multi-city flights:', error);
+        setError('Invalid flight search parameters');
       }
     } else {
       const fromCode = searchParams.get('from');
@@ -81,12 +84,10 @@ const FlightResultsPage = () => {
   const parsePassengers = (): Passenger[] => {
     const passengers: Passenger[] = [];
   
-    const adults = parseInt(searchParams.get('adults') || '1');      // ✅ Correct
-    const kids = parseInt(searchParams.get('kids') || '0');          // ✅ Correct
-    const children = parseInt(searchParams.get('children') || '0');  // ✅ Correct
-    const infants = parseInt(searchParams.get('infants') || '0');    // ✅ Correct
-  
-    const totalChildren = kids + children;  // ✅ Merge kids & children
+    const adults = parseInt(searchParams.get('adults') || '1');
+    const kids = parseInt(searchParams.get('kids') || '0');
+    const children = parseInt(searchParams.get('children') || '0');
+    const infants = parseInt(searchParams.get('infants') || '0');
   
     let paxCounter = 1;
   
@@ -94,29 +95,33 @@ const FlightResultsPage = () => {
       passengers.push({ paxID: `PAX${paxCounter++}`, ptc: 'ADT' });
     }
   
-    for (let i = 0; i < totalChildren; i++) {
+    for (let i = 0; i < kids; i++) {
       passengers.push({ paxID: `PAX${paxCounter++}`, ptc: 'CHD' });
+    }
+  
+    for (let i = 0; i < children; i++) {
+      passengers.push({ paxID: `PAX${paxCounter++}`, ptc: 'C05' });
     }
   
     for (let i = 0; i < infants; i++) {
       passengers.push({ paxID: `PAX${paxCounter++}`, ptc: 'INF' });
     }
   
-    console.log("Generated Passenger List:", passengers);
     return passengers;
   };
   
   useEffect(() => {
     const fetchFlights = async () => {
       setLoading(true);
+      setError(null);
       try {
         const segments = parseFlightSegments();
         const passengers = parsePassengers();
         const tripType = searchParams.get('tripType');
+        const cabinClass = searchParams.get('class') || 'Economy';
 
         if (segments.length === 0) {
-          console.error("No valid flight segments found");
-          return;
+          throw new Error("No valid flight segments found");
         }
 
         const requestBody = {
@@ -130,7 +135,10 @@ const FlightResultsPage = () => {
             pax: passengers,
             shoppingCriteria: {
               tripType: getApiTripType(tripType as any),
-              travelPreferences: { vendorPref: [], cabinCode: searchParams.get("cabinClass") || "Economy" },
+              travelPreferences: {
+                vendorPref: [],
+                cabinCode: cabinClass
+              },
               returnUPSellInfo: true
             }
           }
@@ -144,24 +152,32 @@ const FlightResultsPage = () => {
           body: JSON.stringify(requestBody)
         });
 
-        console.log("API Response Status:", response.status);
-
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Server error: ${response.status} - ${errorText}`);
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.message || 
+            `Server error: ${response.status} - ${response.statusText}`
+          );
         }
 
         const result = await response.json();
         console.log("API Response Data:", result);
         
-        setFlightResults(result.flights || []);
-        sessionStorage.setItem("flightResults", JSON.stringify(result.flights || []));
+        if (!result.flights || result.flights.length === 0) {
+          setError("No flights found for your search criteria. Please try different dates or routes.");
+          setFlightResults([]);
+        } else {
+          setFlightResults(result.flights);
+          sessionStorage.setItem("flightResults", JSON.stringify(result.flights));
+        }
 
       } catch (error) {
         console.error("Error fetching flights:", error);
+        setError(error instanceof Error ? error.message : "Failed to fetch flight results");
         setFlightResults([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchFlights();
@@ -174,12 +190,24 @@ const FlightResultsPage = () => {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Flight Results
         </h2>
+        
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
+            {error}
+          </div>
+        )}
+        
         {loading ? (
-          <p className="text-gray-600 dark:text-gray-400">Loading flight results...</p>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+            <span className="ml-3 text-gray-600 dark:text-gray-400">Searching for flights...</span>
+          </div>
         ) : flightResults.length > 0 ? (
           <FlightResultsList flights={flightResults} />
-        ) : (
-          <p className="text-gray-600 dark:text-gray-400">No flights found for your search criteria.</p>
+        ) : !error && (
+          <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+            No flights found for your search criteria. Please try different dates or routes.
+          </p>
         )}
       </div>
     </div>

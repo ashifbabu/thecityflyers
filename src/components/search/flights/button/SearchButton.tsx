@@ -1,84 +1,3 @@
-// 'use client';
-
-// import React from 'react';
-// import { useRouter } from 'next/navigation';
-// import { cn } from '@/lib/utils';
-// import { useTripType } from '@/hooks/use-trip-type';
-// import { validateFlightSearch } from '@/lib/validations';
-// import type { FlightSearchError } from '@/types/flight';
-
-// interface SearchButtonProps {
-//   onError?: (errors: FlightSearchError[]) => void;
-//   searchData: {
-//     fromCity?: string;
-//     toCity?: string;
-//     departureDate?: Date;
-//     returnDate?: Date;
-//     travelers?: number;
-//     flights?: any[];
-//   };
-//   buttonText?: string;
-// }
-
-// const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButtonProps) => {
-//   const router = useRouter();
-//   const { tripType } = useTripType();
-
-//   const handleSearch = () => {
-//     console.log('Search button clicked');
-//     console.log('Search Data:', searchData);
-
-//     // Validate search data
-//     const validationErrors = validateFlightSearch(tripType, searchData);
-//     console.log('Validation Errors:', validationErrors);
-
-//     if (validationErrors.length > 0) {
-//       if (onError) {
-//         onError(validationErrors);
-//       }
-//       return;
-//     }
-
-//     // Construct search params
-//     const params = new URLSearchParams({
-//       tripType,
-//       ...Object.entries(searchData).reduce((acc, [key, value]) => {
-//         if (value !== undefined) {
-//           if (value instanceof Date) {
-//             acc[key] = value.toISOString();
-//           } else if (typeof value === 'object') {
-//             acc[key] = JSON.stringify(value);
-//           } else {
-//             acc[key] = String(value);
-//           }
-//         }
-//         return acc;
-//       }, {} as Record<string, string>)
-//     });
-
-//     console.log('Navigating to:', `/flight_results?${params.toString()}`);
-//     router.push(`/flight_results?${params.toString()}`);
-//   };
-
-//   return (
-//     <button
-//       type="button"
-//       onClick={handleSearch}
-//       className={cn(
-//         'w-full max-w-xs mx-auto rounded-md',
-//         'transition-all duration-200 flex items-center justify-center font-medium py-4 px-8',
-//         'bg-black text-white hover:bg-gray-900',
-//         'dark:bg-white dark:text-black dark:hover:bg-gray-100'
-//       )}
-//     >
-//       {buttonText}
-//     </button>
-//   );
-// };
-
-// export default SearchButton;
-
-
 'use client';
 
 import React, { useState } from 'react';
@@ -87,25 +6,9 @@ import { cn } from '@/lib/utils';
 import { useTripType } from '@/hooks/use-trip-type';
 import { validateFlightSearch } from '@/lib/validations';
 import type { FlightSearchError, TripType } from '@/types/flight';
-import type { FlightSegment } from '@/types/flight';
-// Define API trip type mapping
+
 type ApiTripType = 'Oneway' | 'Return' | 'Circle';
 
-interface FlightSearchData {
-  fromCity?: string;
-  toCity?: string;
-  departureDate?: Date;
-  returnDate?: Date;
-  travelers?: {
-    adults: number;
-    kids: number;
-    children: number;
-    infants: number;
-    totalPassengers: number;
-    travelClass: string;
-  }; // ✅ Updated to accept an object
-  flights?: FlightSegment[];
-}
 interface SearchButtonProps {
   onError?: (errors: FlightSearchError[]) => void;
   searchData: {
@@ -123,12 +26,12 @@ interface SearchButtonProps {
       totalPassengers: number;
       travelClass: string;
     };
+    flights?: any[];
     travelClass?: string;
   };
   buttonText?: string;
 }
 
-// Export getApiTripType to share with other components
 export const getApiTripType = (type: TripType): ApiTripType => {
   switch (type) {
     case 'roundTrip':
@@ -147,7 +50,6 @@ const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButt
   const { tripType } = useTripType();
   const [loading, setLoading] = useState(false);
 
-  // Format date to YYYY-MM-DD
   const formatDate = (date?: Date) => {
     if (!date) return undefined;
     return date.toISOString().split('T')[0];
@@ -156,117 +58,154 @@ const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButt
   const handleSearch = async () => {
     console.log('🛫 Search button clicked');
     console.log('🔍 Search Data:', searchData);
-  
-    // Validate search data
+
     const validationErrors = validateFlightSearch(tripType, {
       ...searchData,
-      travelers: searchData.travelers?.totalPassengers, // ✅ Send only total passengers
+      travelers: searchData.travelers?.totalPassengers,
     });
-    
-    console.log('❌ Validation Errors:', validationErrors);
-    
+
     if (validationErrors.length > 0) {
       if (onError) {
         onError(validationErrors);
       }
       return;
     }
-  
-    const fromCode = searchData.fromAirportCode || "";
-    const toCode = searchData.toAirportCode || "";
-  
-    console.log("📌 Selected From Code:", fromCode);
-    console.log("📌 Selected To Code:", toCode);
-  
-    if (!fromCode || !toCode) {
-      console.error("❌ ERROR: Airport codes are missing!");
-      return;
-    }
-  
-    // Generate the passengers dynamically
+
+    // Generate passengers array
     const { adults = 1, kids = 0, children = 0, infants = 0 } = 
-    typeof searchData.travelers === 'object' && searchData.travelers !== null
-      ? searchData.travelers
-      : { adults: 1, kids: 0, children: 0, infants: 0 };
+      searchData.travelers || { adults: 1, kids: 0, children: 0, infants: 0 };
 
-const pax = [];
+    const pax = [];
+    let paxCounter = 1;
 
-// Add Adults (ADT)
-for (let i = 0; i < adults; i++) {
-  pax.push({ paxID: `PAX${pax.length + 1}`, ptc: 'ADT' });
-}
-
-// Add Kids (CHD)
-for (let i = 0; i < kids; i++) {
-  pax.push({ paxID: `PAX${pax.length + 1}`, ptc: 'CHD' });
-}
-
-// Add Children (C05)
-for (let i = 0; i < children; i++) {
-  pax.push({ paxID: `PAX${pax.length + 1}`, ptc: 'C05' });
-}
-
-// Add Infants (INF)
-for (let i = 0; i < infants; i++) {
-  pax.push({ paxID: `PAX${pax.length + 1}`, ptc: 'INF' });
-}
-   
-    const requestBody = {
-      pointOfSale: "BD",
-      source: "bdfare",
-      request: {
-        originDest: [
-          {
-            originDepRequest: {
-              iatA_LocationCode: fromCode,
-              date: formatDate(searchData.departureDate)
-            },
-            destArrivalRequest: {
-              iatA_LocationCode: toCode
-            }
-          }
-        ],
-        pax: pax,
-        shoppingCriteria: {
-          tripType: getApiTripType(tripType),
-          travelPreferences: {
-            vendorPref: [],
-            cabinCode: "Economy"
-          },
-          returnUPSellInfo: true
-        }
-      }
-    };
-  
-    if (tripType === 'roundTrip' && searchData.returnDate) {
-      requestBody.request.originDest.push({
-        originDepRequest: {
-          iatA_LocationCode: toCode,
-          date: formatDate(searchData.returnDate)
-        },
-        destArrivalRequest: {
-          iatA_LocationCode: fromCode
-        }
-      });
+    // Add Adults (ADT)
+    for (let i = 0; i < adults; i++) {
+      pax.push({ paxID: `PAX${paxCounter++}`, ptc: 'ADT' });
     }
-  
+
+    // Add Kids (CHD)
+    for (let i = 0; i < kids; i++) {
+      pax.push({ paxID: `PAX${paxCounter++}`, ptc: 'CHD' });
+    }
+
+    // Add Children (C05)
+    for (let i = 0; i < children; i++) {
+      pax.push({ paxID: `PAX${paxCounter++}`, ptc: 'C05' });
+    }
+
+    // Add Infants (INF)
+    for (let i = 0; i < infants; i++) {
+      pax.push({ paxID: `PAX${paxCounter++}`, ptc: 'INF' });
+    }
+
+    let requestBody;
+
+    if (tripType === 'multiCity' && searchData.flights) {
+      // Handle multi-city request
+      const originDest = searchData.flights
+        .filter(flight => flight.fromAirportCode && flight.toAirportCode && flight.departureDate) // Filter out incomplete segments
+        .map(flight => ({
+          originDepRequest: {
+            iatA_LocationCode: flight.fromAirportCode,
+            date: formatDate(flight.departureDate)
+          },
+          destArrivalRequest: {
+            iatA_LocationCode: flight.toAirportCode
+          }
+        }));
+
+      if (originDest.length < 2) {
+        if (onError) {
+          onError([{ field: 'flights', message: 'At least two valid flight segments are required' }]);
+        }
+        return;
+      }
+
+      requestBody = {
+        pointOfSale: "BD",
+        source: "all", // Changed from "bdfare" to "all" to match successful request
+        request: {
+          originDest,
+          pax,
+          shoppingCriteria: {
+            tripType: "Circle",
+            travelPreferences: {
+              vendorPref: [],
+              cabinCode: searchData.travelers?.travelClass || "Economy"
+            },
+            returnUPSellInfo: true
+          }
+        }
+      };
+    } else {
+      // Handle one-way and round-trip requests
+      const originDest = [
+        {
+          originDepRequest: {
+            iatA_LocationCode: searchData.fromAirportCode,
+            date: formatDate(searchData.departureDate)
+          },
+          destArrivalRequest: {
+            iatA_LocationCode: searchData.toAirportCode
+          }
+        }
+      ];
+
+      if (tripType === 'roundTrip' && searchData.returnDate) {
+        originDest.push({
+          originDepRequest: {
+            iatA_LocationCode: searchData.toAirportCode,
+            date: formatDate(searchData.returnDate)
+          },
+          destArrivalRequest: {
+            iatA_LocationCode: searchData.fromAirportCode
+          }
+        });
+      }
+
+      requestBody = {
+        pointOfSale: "BD",
+        source: "all", // Changed from "bdfare" to "all"
+        request: {
+          originDest,
+          pax,
+          shoppingCriteria: {
+            tripType: getApiTripType(tripType),
+            travelPreferences: {
+              vendorPref: [],
+              cabinCode: searchData.travelers?.travelClass || "Economy"
+            },
+            returnUPSellInfo: true
+          }
+        }
+      };
+    }
+
+    console.log("Final Request Body:", JSON.stringify(requestBody, null, 2));
     sessionStorage.setItem('lastFlightRequest', JSON.stringify(requestBody));
-  
+
+    // Construct URL parameters
     const params = new URLSearchParams({
-      tripType: tripType,
-      from: fromCode,
-      to: toCode,
-      departure: formatDate(searchData.departureDate) || '',
-      adults: String(adults),           // ✅ Added
-      kids: String(kids),               // ✅ Added
-      children: String(children),       // ✅ Added
-      infants: String(infants)          // ✅ Added
+      tripType,
+      ...(tripType === 'multiCity' 
+        ? { flights: JSON.stringify(searchData.flights) }
+        : {
+            from: searchData.fromAirportCode || '',
+            to: searchData.toAirportCode || '',
+            departure: formatDate(searchData.departureDate) || ''
+          }
+      ),
+      adults: String(adults),
+      kids: String(kids),
+      children: String(children),
+      infants: String(infants),
+      class: searchData.travelers?.travelClass || 'Economy'
     });
-  
+
     if (tripType === 'roundTrip' && searchData.returnDate) {
       params.append('return', formatDate(searchData.returnDate) || '');
     }
-  
+
     router.push(`/flight_results?${params.toString()}`);
   };
 

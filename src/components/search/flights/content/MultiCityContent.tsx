@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState } from 'react';
 import { PlusCircleIcon, XMarkIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import LocationInput from '../location/LocationInput';
@@ -15,8 +15,10 @@ interface Flight {
   id: number;
   fromCity: string;
   fromAirport: string;
+  fromAirportCode: string;
   toCity: string;
   toAirport: string;
+  toAirportCode: string;
   departureDate?: Date;
 }
 
@@ -31,15 +33,16 @@ const MultiCityContent = ({
   initialTravelers = 1,
   initialClass = 'Economy'
 }: MultiCityContentProps) => {
-  // Initialize flights with provided data or defaults
   const [flights, setFlights] = useState<Flight[]>(() => {
     if (initialFlights && initialFlights.length >= 2) {
       return initialFlights.map((flight, index) => ({
         id: index + 1,
         fromCity: flight.fromCity || '',
         fromAirport: flight.fromAirport || '',
+        fromAirportCode: flight.fromAirportCode || '',
         toCity: flight.toCity || '',
         toAirport: flight.toAirport || '',
+        toAirportCode: flight.toAirportCode || '',
         departureDate: flight.departureDate ? new Date(flight.departureDate) : undefined,
       }));
     }
@@ -48,23 +51,29 @@ const MultiCityContent = ({
         id: 1,
         fromCity: '',
         fromAirport: '',
+        fromAirportCode: '',
         toCity: '',
         toAirport: '',
+        toAirportCode: '',
         departureDate: undefined,
       },
       {
         id: 2,
         fromCity: '',
         fromAirport: '',
+        fromAirportCode: '',
         toCity: '',
         toAirport: '',
+        toAirportCode: '',
         departureDate: undefined,
       },
     ];
   });
+
   const [travelersData, setTravelersData] = useState({
     adults: 1,
     children: 0,
+    kids: 0,
     infants: 0,
     totalPassengers: 1,
     travelClass: 'Economy',
@@ -80,8 +89,10 @@ const MultiCityContent = ({
           id: Date.now(),
           fromCity: '',
           fromAirport: '',
+          fromAirportCode: '',
           toCity: '',
           toAirport: '',
+          toAirportCode: '',
           departureDate: undefined,
         },
       ]);
@@ -112,8 +123,10 @@ const MultiCityContent = ({
           ...flight,
           fromCity: flight.toCity,
           fromAirport: flight.toAirport,
+          fromAirportCode: flight.toAirportCode,
           toCity: flight.fromCity,
           toAirport: flight.fromAirport,
+          toAirportCode: flight.fromAirportCode,
         };
       }
       return flight;
@@ -122,12 +135,10 @@ const MultiCityContent = ({
 
   return (
     <div className="w-full bg-white dark:bg-black p-6 space-y-6">
-      {/* Trip Types */}
       <div className="mb-4">
         <TripTypes />
       </div>
 
-      {/* Error Messages */}
       {errors.length > 0 && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <ul className="list-disc list-inside space-y-1">
@@ -140,7 +151,6 @@ const MultiCityContent = ({
         </div>
       )}
 
-      {/* Flight Segments */}
       <div className="space-y-4">
         {flights.map((flight, index) => (
           <div 
@@ -158,10 +168,11 @@ const MultiCityContent = ({
                     type="from"
                     value={flight.fromCity}
                     subValue={flight.fromAirport}
-                    onChange={(city, airportName) => {
+                    onChange={(city, airportName, code) => {
                       updateFlight(flight.id, {
                         fromCity: city,
                         fromAirport: airportName,
+                        fromAirportCode: code,
                       });
                     }}
                   />
@@ -170,14 +181,14 @@ const MultiCityContent = ({
                   type="to"
                   value={flight.toCity}
                   subValue={flight.toAirport}
-                  onChange={(city, airportName) => {
+                  onChange={(city, airportName, code) => {
                     updateFlight(flight.id, {
                       toCity: city,
                       toAirport: airportName,
+                      toAirportCode: code,
                     });
                   }}
                 />
-                {/* Swap Button */}
                 <button
                   type="button"
                   onClick={() => swapLocations(flight.id)}
@@ -221,7 +232,7 @@ const MultiCityContent = ({
                   value={`${travelersData.totalPassengers} Traveler${travelersData.totalPassengers !== 1 ? 's' : ''}`}
                   subValue={travelersData.travelClass}
                   onClick={() => console.log('Open travelers modal')}
-                  onChange={(data) => setTravelersData(data)}  // ✅ Updates state when changed
+                  onChange={(data) => setTravelersData(data)}
                 />
               </div>
             )}
@@ -241,7 +252,6 @@ const MultiCityContent = ({
         ))}
       </div>
 
-      {/* Add City Button and Counter */}
       <div className="flex justify-between items-center">
         <button
           onClick={handleAddFlight}
@@ -263,32 +273,27 @@ const MultiCityContent = ({
         </div>
       </div>
 
-      {/* Fare Types */}
       <div className="mt-4">
         <FareTypes />
       </div>
 
-      {/* Search Button */}
       <div className="flex justify-center w-full">
-      <SearchButton 
-            searchData={{
-              fromCity: flights[0]?.fromCity,
-              toCity: flights[0]?.toCity,
-              fromAirportCode: flights[0]?.fromAirport,
-              toAirportCode: flights[0]?.toAirport,
-              departureDate: flights[0]?.departureDate,
-              travelers: {
-                adults: initialTravelers || 1,       // ✅ Assuming all as adults
-                kids: 0,                             // ✅ Default if no data
-                children: 0,                         // ✅ Default if no data
-                infants: 0,                          // ✅ Default if no data
-                totalPassengers: initialTravelers || 1, // ✅ Total matches initialTravelers
-                travelClass: 'Economy'               // ✅ Default travel class
-              }
-            }}
-            onError={handleSearchErrors}
-            buttonText="Search"
-          />
+        <SearchButton 
+          searchData={{
+            flights: flights.map(flight => ({
+              fromCity: flight.fromCity,
+              fromAirport: flight.fromAirport,
+              fromAirportCode: flight.fromAirportCode,
+              toCity: flight.toCity,
+              toAirport: flight.toAirport,
+              toAirportCode: flight.toAirportCode,
+              departureDate: flight.departureDate,
+            })),
+            travelers: travelersData,
+          }}
+          onError={handleSearchErrors}
+          buttonText="Search"
+        />
       </div>
     </div>
   );
