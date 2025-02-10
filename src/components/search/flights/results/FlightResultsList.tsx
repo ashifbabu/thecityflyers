@@ -8,10 +8,18 @@ interface FlightResultsListProps {
 }
 
 const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
+  if (!Array.isArray(flights)) {
+    return (
+      <div className="w-full max-w-5xl mx-auto">
+        <p className="text-center text-muted-foreground">No flight results available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4">
       {flights.map((flight) => (
-        <FlightCard key={flight.OfferId} offer={flight} />
+        flight && <FlightCard key={flight.OfferId || Math.random()} offer={flight} />
       ))}
     </div>
   );

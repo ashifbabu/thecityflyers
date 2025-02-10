@@ -1,0 +1,232 @@
+### 🛫 **Complete Instructions for Using Oneway, Return, and Multi-City (Circle) Flight Request Bodies** 🛬  
+
+This guide explains each element of the request body for different trip types: **Oneway**, **Return**, and **Multi-City (Circle)**. It also covers how to handle **multiple passengers (PAX)** with different **passenger types (PTC)**.  
+
+---
+
+## 🚩 **1. Common Structure for All Request Types**
+
+### 📦 **Base Structure:**  
+```json
+{
+  "pointOfSale": "BD",
+  "source": "bdfare",
+  "request": {
+    "originDest": [ ... ],       // Flight segments (legs)
+    "pax": [ ... ],              // Passenger information
+    "shoppingCriteria": { ... }  // Preferences & trip details
+  }
+}
+```
+
+- **`pointOfSale`**: The country code where the booking is made. (e.g., `"BD"` for Bangladesh)  
+- **`source`**: API provider, e.g., `"bdfare"` or `"flyhub"`.  
+- **`request`**: The main body containing all flight-related data.  
+
+---
+
+## ✈️ **2. Oneway Request Body**  
+
+### ✅ **Sample Request Body:**  
+```json
+{
+  "pointOfSale": "BD",
+  "source": "bdfare",
+  "request": {
+    "originDest": [
+      {
+        "originDepRequest": {
+          "iatA_LocationCode": "DAC",     // Departure Airport Code (Dhaka)
+          "date": "2025-03-15"            // Departure Date
+        },
+        "destArrivalRequest": {
+          "iatA_LocationCode": "CXB"      // Arrival Airport Code (Cox’s Bazar)
+        }
+      }
+    ],
+    "pax": [
+      { "paxID": "PAX1", "ptc": "ADT" },  // Adult
+      { "paxID": "PAX2", "ptc": "C05" },  // Child (age 2-11)
+      { "paxID": "PAX3", "ptc": "INF" }   // Infant (under 2 years)
+    ],
+    "shoppingCriteria": {
+      "tripType": "Oneway",
+      "travelPreferences": {
+        "vendorPref": [],                // Preferred Airlines (empty = any airline)
+        "cabinCode": "Economy"           // Cabin Class: Economy, Business, First
+      },
+      "returnUPSellInfo": true           // Suggest return flights (optional)
+    }
+  }
+}
+```
+
+### 🗒️ **Key Points:**  
+- **`tripType`:** `"Oneway"` for single-leg trips.  
+- **`originDepRequest`:** Specify **departure airport** and **date**.  
+- **`destArrivalRequest`:** Specify **arrival airport**.  
+- **`pax`:** Add multiple passengers with unique `paxID`s.  
+
+---
+
+## 🔄 **3. Return Request Body**  
+
+### ✅ **Sample Request Body:**  
+```json
+{
+  "pointOfSale": "BD",
+  "source": "bdfare",
+  "request": {
+    "originDest": [
+      {
+        "originDepRequest": {
+          "iatA_LocationCode": "DAC",
+          "date": "2025-03-10"
+        },
+        "destArrivalRequest": {
+          "iatA_LocationCode": "CXB"
+        }
+      },
+      {
+        "originDepRequest": {
+          "iatA_LocationCode": "CXB",
+          "date": "2025-03-15"
+        },
+        "destArrivalRequest": {
+          "iatA_LocationCode": "DAC"
+        }
+      }
+    ],
+    "pax": [
+      { "paxID": "PAX1", "ptc": "ADT" }
+    ],
+    "shoppingCriteria": {
+      "tripType": "Return",
+      "travelPreferences": {
+        "vendorPref": [],
+        "cabinCode": "Economy"
+      },
+      "returnUPSellInfo": true
+    }
+  }
+}
+```
+
+### 🗒️ **Key Points:**  
+- **`tripType`:** `"Return"` for round trips.  
+- **`originDest`:** Two segments required:  
+  - **First segment:** Outbound flight.  
+  - **Second segment:** Return flight.  
+- **`pax`:** Add passengers as needed.  
+
+---
+
+## 🔃 **4. Multi-City (Circle) Request Body**  
+
+### ✅ **Sample Request Body:**  
+```json
+{
+  "pointOfSale": "BD",
+  "source": "bdfare",
+  "request": {
+    "originDest": [
+      {
+        "originDepRequest": {
+          "iatA_LocationCode": "CGP",
+          "date": "2025-03-10"
+        },
+        "destArrivalRequest": {
+          "iatA_LocationCode": "DAC"
+        }
+      },
+      {
+        "originDepRequest": {
+          "iatA_LocationCode": "DAC",
+          "date": "2025-03-15"
+        },
+        "destArrivalRequest": {
+          "iatA_LocationCode": "CXB"
+        }
+      },
+      {
+        "originDepRequest": {
+          "iatA_LocationCode": "CXB",
+          "date": "2025-03-20"
+        },
+        "destArrivalRequest": {
+          "iatA_LocationCode": "DAC"
+        }
+      }
+    ],
+    "pax": [
+      { "paxID": "PAX1", "ptc": "ADT" },
+      { "paxID": "PAX2", "ptc": "ADT" },
+      { "paxID": "PAX3", "ptc": "C05" }
+    ],
+    "shoppingCriteria": {
+      "tripType": "Circle",
+      "travelPreferences": {
+        "vendorPref": [],
+        "cabinCode": "Economy"
+      },
+      "returnUPSellInfo": true
+    }
+  }
+}
+```
+
+### 🗒️ **Key Points:**  
+- **`tripType`:** `"Circle"` for multi-city journeys.  
+- **`originDest`:** Add multiple segments based on the travel plan.  
+- **Flexible for complex itineraries** like city hopping.  
+
+---
+
+## 👤 **5. Passenger (`pax`) Details**  
+
+### 🚹 **Passenger Types (`ptc`):**  
+| Code  | Description          | Age Group        |
+|-------|----------------------|------------------|
+| `ADT` | Adult                | 12+ years        |
+| `CHD` | Child                | 2–11 years       |
+| `C05` | Child under 5        | 0–5 years        |
+| `INF` | Infant               | Under 2 years    |
+| `SRC` | Senior Citizen       | 60+ years        |
+| `STU` | Student              | Verified students|
+
+### 👨‍👩‍👧‍👦 **Examples:**  
+- **1 Adult + 1 Child:**  
+  ```json
+  [
+    { "paxID": "PAX1", "ptc": "ADT" },
+    { "paxID": "PAX2", "ptc": "C05" }
+  ]
+  ```
+- **Multiple Adults:**  
+  ```json
+  [
+    { "paxID": "PAX1", "ptc": "ADT" },
+    { "paxID": "PAX2", "ptc": "ADT" },
+    { "paxID": "PAX3", "ptc": "ADT" }
+  ]
+  ```
+
+---
+
+## 🎯 **6. Travel Preferences (`shoppingCriteria`)**  
+
+### 🚀 **Key Fields:**  
+- **`tripType`:** `"Oneway"`, `"Return"`, or `"Circle"`  
+- **`travelPreferences`:**  
+  - **`vendorPref`:** Preferred airline codes (e.g., `["BG", "QR"]`), or leave empty for all.  
+  - **`cabinCode`:** `"Economy"`, `"Business"`, `"First"`, etc.  
+- **`returnUPSellInfo`:** `true` or `false` to suggest better return options.  
+
+---
+
+## 📋 **Final Notes:**  
+- ✅ **Unique `paxID` for each passenger.**  
+- ✅ **Ensure dates are correct and in `YYYY-MM-DD` format.**  
+- ✅ **Match `tripType` with the correct number of `originDest` segments.**  
+
+Let me know if you need further adjustments or examples! 🚀

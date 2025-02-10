@@ -7,12 +7,27 @@ export interface FlightSearchError {
 }
 
 // ✅ Represents individual flight segments
-export interface FlightSegment {  // Changed to export for reusability
-  fromCode: string;               // IATA code for departure airport (e.g., DAC)
-  toCode: string;                 // IATA code for arrival airport (e.g., CGP)
-  date: string;                   // Format: YYYY-MM-DD
-  flightNumber?: string;          // Optional flight number (e.g., BG-101)
-  airline?: string;               // Optional airline name (e.g., Biman Bangladesh Airlines)
+export interface FlightSegment {
+  Departure: {
+    IATACode: string
+    Terminal: string
+    ScheduledTime: string
+    AirportName: string
+  }
+  Arrival: {
+    IATACode: string
+    Terminal: string
+    ScheduledTime: string
+    AirportName: string
+  }
+  MarketingCarrier: {
+    carrierDesigCode: string
+    marketingCarrierFlightNumber: string
+    carrierName: string
+  }
+  Duration: string
+  CabinType: string
+  SeatsRemaining?: number
 }
 
 // ✅ Defines the structure of flight search data

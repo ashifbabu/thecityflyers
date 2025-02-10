@@ -24,7 +24,7 @@ const ModifySearch = () => {
   // Parse flights data from URL
   const parseFlights = () => {
     try {
-      const flightsParam = searchParams.get('flights');
+      const flightsParam = searchParams ? searchParams.get('flights') : null;
       return flightsParam ? JSON.parse(flightsParam) : [];
     } catch (error) {
       console.error('Error parsing flights data:', error);
@@ -34,15 +34,15 @@ const ModifySearch = () => {
 
   // Initialize state with URL parameters
   const [searchData, setSearchData] = useState({
-    fromCity: searchParams.get('fromCity') || '',
-    fromAirport: searchParams.get('fromAirport') || '',
-    toCity: searchParams.get('toCity') || '',
-    toAirport: searchParams.get('toAirport') || '',
-    departureDate: searchParams.get('departureDate') 
-      ? new Date(searchParams.get('departureDate')!) 
+    fromCity: searchParams?.get('fromCity') || '',
+    fromAirport: searchParams?.get('fromAirport') || '',
+    toCity: searchParams?.get('toCity') || '',
+    toAirport: searchParams?.get('toAirport') || '',
+    departureDate: searchParams?.get('departureDate') 
+      ? new Date(searchParams?.get('departureDate')!) 
       : undefined,
-    returnDate: searchParams.get('returnDate')
-      ? new Date(searchParams.get('returnDate')!)
+    returnDate: searchParams?.get('returnDate')
+      ? new Date(searchParams?.get('returnDate')!)
       : undefined,
     travelers: {
       adults: 1,
@@ -52,14 +52,14 @@ const ModifySearch = () => {
       totalPassengers: 1,
       travelClass: 'Economy',
     },
-    class: searchParams.get('class') || 'Economy',
-    fareType: searchParams.get('fareType') || 'regular',
+    class: searchParams?.get('class') || 'Economy',
+    fareType: searchParams?.get('fareType') || 'regular',
     flights: parseFlights()
   });
 
   // Set initial trip type from URL
   useEffect(() => {
-    const urlTripType = searchParams.get('tripType');
+    const urlTripType = searchParams?.get('tripType');
     if (urlTripType) {
       setTripType(urlTripType as any);
     }

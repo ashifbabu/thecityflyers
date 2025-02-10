@@ -32,12 +32,12 @@ const FlightResultsPage = () => {
 
   // Parse flight segments from URL parameters
   const parseFlightSegments = (): FlightSegment[] => {
-    const tripType = searchParams.get('tripType');
+    const tripType = searchParams ? searchParams.get('tripType') : null;
     const segments: FlightSegment[] = [];
 
     if (tripType === 'multiCity') {
       try {
-        const flightsParam = searchParams.get('flights');
+        const flightsParam = searchParams?.get('flights');
         if (flightsParam) {
           const flights = JSON.parse(decodeURIComponent(flightsParam));
           flights.forEach((flight: any) => {
@@ -55,10 +55,10 @@ const FlightResultsPage = () => {
         setError('Invalid flight search parameters');
       }
     } else {
-      const fromCode = searchParams.get('from');
-      const toCode = searchParams.get('to');
-      const departureDate = searchParams.get('departure');
-      const returnDate = searchParams.get('return');
+      const fromCode = searchParams?.get('from');
+      const toCode = searchParams?.get('to');
+      const departureDate = searchParams?.get('departure');
+      const returnDate = searchParams?.get('return');
 
       if (fromCode && toCode && departureDate) {
         segments.push({
@@ -84,10 +84,10 @@ const FlightResultsPage = () => {
   const parsePassengers = (): Passenger[] => {
     const passengers: Passenger[] = [];
   
-    const adults = parseInt(searchParams.get('adults') || '1');
-    const kids = parseInt(searchParams.get('kids') || '0');
-    const children = parseInt(searchParams.get('children') || '0');
-    const infants = parseInt(searchParams.get('infants') || '0');
+    const adults = parseInt(searchParams?.get('adults') || '1');
+    const kids = parseInt(searchParams?.get('kids') || '0');
+    const children = parseInt(searchParams?.get('children') || '0');
+    const infants = parseInt(searchParams?.get('infants') || '0');
   
     let paxCounter = 1;
   
@@ -117,8 +117,8 @@ const FlightResultsPage = () => {
       try {
         const segments = parseFlightSegments();
         const passengers = parsePassengers();
-        const tripType = searchParams.get('tripType');
-        const cabinClass = searchParams.get('class') || 'Economy';
+        const tripType = searchParams?.get('tripType');
+        const cabinClass = searchParams?.get('class') || 'Economy';
 
         if (segments.length === 0) {
           throw new Error("No valid flight segments found");
@@ -148,32 +148,22 @@ const FlightResultsPage = () => {
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/combined/search`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(
-            errorData?.message || 
-            `Server error: ${response.status} - ${response.statusText}`
-          );
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const result = await response.json();
-        console.log("API Response Data:", result);
-        
-        if (!result.flights || result.flights.length === 0) {
-          setError("No flights found for your search criteria. Please try different dates or routes.");
-          setFlightResults([]);
-        } else {
-          setFlightResults(result.flights);
-          sessionStorage.setItem("flightResults", JSON.stringify(result.flights));
-        }
-
+        const data = await response.json();
+        setFlightResults(data.flights || []);
+        sessionStorage.setItem("flightResults", JSON.stringify(data.flights));
       } catch (error) {
-        console.error("Error fetching flights:", error);
-        setError(error instanceof Error ? error.message : "Failed to fetch flight results");
+        console.error('Error fetching flights:', error);
+        setError('Failed to fetch flight results. Please try again.');
         setFlightResults([]);
       } finally {
         setLoading(false);
