@@ -193,15 +193,17 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
     );
   }
 
-  // Separate outbound and inbound segments based on ReturnJourney flag
+  // Handle both ReturnJourney flag and InboundSegments
   const outboundSegments = offer.OutboundSegments.filter(segment => !segment.ReturnJourney);
-  const inboundSegments = offer.OutboundSegments.filter(segment => segment.ReturnJourney);
+  const returnSegments = offer.InboundSegments?.length > 0 
+    ? offer.InboundSegments 
+    : offer.OutboundSegments.filter(segment => segment.ReturnJourney);
 
   const firstOutboundSegment = outboundSegments[0];
   const lastOutboundSegment = outboundSegments[outboundSegments.length - 1];
-  const firstInboundSegment = inboundSegments[0];
-  const lastInboundSegment = inboundSegments[inboundSegments.length - 1];
-  const isMultiSegment = outboundSegments.length > 1 || inboundSegments.length > 1;
+  const firstReturnSegment = returnSegments?.[0];
+  const lastReturnSegment = returnSegments?.[returnSegments.length - 1];
+  const isMultiSegment = outboundSegments.length > 1 || returnSegments.length > 1;
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<UpSellBrand | null>(null);
 
@@ -260,7 +262,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
   };
 
   const outboundRoute = getRouteDisplay(outboundSegments);
-  const inboundRoute = getRouteDisplay(inboundSegments);
+  const returnRoute = getRouteDisplay(returnSegments);
 
   useEffect(() => {
     if (offer.UpSellBrandList?.length) {
@@ -303,8 +305,8 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                   <div className="font-semibold text-xl">{firstOutboundSegment.MarketingCarrier.carrierName}</div>
                   <div className="text-sm text-muted-foreground">
                     {getFlightNumbers(outboundSegments)}
-                    {inboundSegments.length > 0 && (
-                      <>, {getFlightNumbers(inboundSegments)}</>
+                    {returnSegments.length > 0 && (
+                      <>, {getFlightNumbers(returnSegments)}</>
                     )}
                   </div>
                 </div>
@@ -358,33 +360,33 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
             </div>
 
             {/* Return Flight */}
-            {inboundSegments.length > 0 && inboundRoute && (
+            {returnSegments && returnSegments.length > 0 && returnRoute && (
               <div className="mt-4">
                 <div className="text-sm font-medium text-muted-foreground mb-2">Return</div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-muted/30 p-4 rounded-lg border">
                   <div>
                     <div className="text-lg font-bold">
-                      {inboundRoute!.origin.city} ({inboundRoute!.origin.code})
+                      {returnRoute!.origin.city} ({returnRoute!.origin.code})
                     </div>
-                    <div className="text-sm text-muted-foreground mb-1">{inboundRoute!.origin.airport}</div>
-                    <div className="text-3xl font-bold">{formatDate(inboundRoute!.origin.time).time}</div>
+                    <div className="text-sm text-muted-foreground mb-1">{returnRoute!.origin.airport}</div>
+                    <div className="text-3xl font-bold">{formatDate(returnRoute!.origin.time).time}</div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(inboundRoute!.origin.time).date}
+                      {formatDate(returnRoute!.origin.time).date}
                     </div>
                   </div>
 
                   <div className="flex flex-col items-center my-4 sm:my-0">
-                    <div className="text-sm font-medium">{getTotalDuration(inboundSegments)}</div>
+                    <div className="text-sm font-medium">{getTotalDuration(returnSegments)}</div>
                     <div className="w-32 sm:w-48 h-px bg-primary/30 relative my-2">
                       <Plane className="w-4 h-4 absolute -top-2 -right-2 text-primary" />
                     </div>
-                    {inboundSegments.length > 1 && (
+                    {returnSegments.length > 1 && (
                       <div className="text-sm">
                         <div className="text-primary">
-                          {inboundSegments.length - 1} {inboundSegments.length - 1 === 1 ? "Stop" : "Stops"}
+                          {returnSegments.length - 1} {returnSegments.length - 1 === 1 ? "Stop" : "Stops"}
                         </div>
                         <div className="text-xs text-muted-foreground text-center">
-                          {getStopsDisplay(inboundSegments)?.text}
+                          {returnSegments.slice(0, -1).map(seg => seg.Arrival.IATACode).join(", ")}
                         </div>
                       </div>
                     )}
@@ -392,11 +394,11 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
 
                   <div className="text-right">
                     <div className="text-lg font-bold">
-                      {inboundRoute!.destination.city} ({inboundRoute!.destination.code})
+                      {returnRoute!.destination.city} ({returnRoute!.destination.code})
                     </div>
-                    <div className="text-sm text-muted-foreground mb-1">{inboundRoute!.destination.airport}</div>
-                    <div className="text-3xl font-bold">{formatDate(inboundRoute!.destination.time).time}</div>
-                    <div className="text-sm text-muted-foreground">{formatDate(inboundRoute!.destination.time).date}</div>
+                    <div className="text-sm text-muted-foreground mb-1">{returnRoute!.destination.airport}</div>
+                    <div className="text-3xl font-bold">{formatDate(returnRoute!.destination.time).time}</div>
+                    <div className="text-sm text-muted-foreground">{formatDate(returnRoute!.destination.time).date}</div>
                   </div>
                 </div>
               </div>
@@ -597,11 +599,11 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                   </>
                 )}
 
-                {/* Inbound Segments */}
-                {inboundSegments.length > 0 && (
+                {/* Return Segments */}
+                {returnSegments.length > 0 && (
                   <>
                     <div className="text-sm text-muted-foreground mb-4 mt-6">Return Flight</div>
-                    {inboundSegments.map((segment, index) => (
+                    {returnSegments.map((segment, index) => (
                       <div key={index} className="space-y-4">
                         <div className="flex flex-col bg-muted/30 p-4 rounded-lg border">
                           <div className="flex items-center justify-between mb-4">
@@ -648,13 +650,13 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                           </div>
                         </div>
 
-                        {index < inboundSegments.length - 1 && (
+                        {index < returnSegments.length - 1 && (
                           <div className="flex items-center gap-3 p-4 bg-orange-50 border-l-4 border-orange-500 rounded">
                             <Clock className="w-5 h-5 text-orange-500" />
                             <div>
                               <div className="font-medium">Layover at {segment.Arrival.AirportName}</div>
                               <div className="text-sm text-muted-foreground">
-                                Connection time: {getLayoverDuration(segment, inboundSegments[index + 1])}
+                                Connection time: {getLayoverDuration(segment, returnSegments[index + 1])}
                               </div>
                             </div>
                           </div>
