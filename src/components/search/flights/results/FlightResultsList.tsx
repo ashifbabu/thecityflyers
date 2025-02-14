@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import FlightCard from '@/components/flightcard/FlightCard';
 import MultiCityFlightCard from '@/components/flightcard/MultiCityFlightCard';
 
 interface FlightResultsListProps {
-  flights: Array<any>; // Using 'any' temporarily for dynamic API response
+  flights: any[];
 }
 
 const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
@@ -35,6 +35,16 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
     };
   }, [flights]);
 
+  // Instead of creating new fare objects, use the fare directly from the flight
+  const flightFares = flights.map(flight => ({
+    id: flight.OfferId,
+    fare: flight.fare // Use the fare we calculated in getSortedAndFilteredFlights
+  }));
+
+  console.log('Flight fares:', flightFares);
+
+  console.log('Rendering FlightResultsList with flights:', flights.slice(0, 3));
+
   if (!Array.isArray(flights)) {
     return (
       <div className="w-full max-w-5xl mx-auto">
@@ -52,14 +62,20 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
 
       {/* Flight Cards */}
       <div className="space-y-4">
-        {flights.map((flight) => {
+        {flights.map((flight, index) => {
           if (!flight) return null;
+
+          // Debug log for each flight's fare
+          console.log(`Flight ${index} fare:`, {
+            id: flight.OfferId,
+            fare: flight.fare
+          });
 
           // Use MultiCityFlightCard for multi-city trips
           if (tripType === 'multiCity') {
             return (
               <MultiCityFlightCard 
-                key={flight.OfferId || Math.random()} 
+                key={flight.OfferId || index} 
                 multiCityOffer={flight} 
               />
             );
@@ -67,10 +83,9 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
 
           // Use regular FlightCard for one-way and round-trip
           return (
-            <FlightCard 
-              key={flight.OfferId || Math.random()} 
-              offer={flight} 
-            />
+            <div key={flight.OfferId || index}>
+              <FlightCard offer={flight} />
+            </div>
           );
         })}
       </div>

@@ -43,14 +43,14 @@ const FlightResultsPage = () => {
     layovers: 'lowToHigh'
   });
 
-  // Format date to YYYY-MM-DD
+  const [sortedFlights, setSortedFlights] = useState<any[]>([]);
+
   const formatDate = (dateStr?: string): string | undefined => {
     if (!dateStr) return undefined;
     const date = new Date(dateStr);
     return date.toISOString().split('T')[0];
   };
 
-  // Parse flight segments from URL parameters
   const parseFlightSegments = (): FlightSegment[] => {
     const tripType = searchParams ? searchParams.get('tripType') : null;
     const segments: FlightSegment[] = [];
@@ -100,7 +100,6 @@ const FlightResultsPage = () => {
     return segments;
   };
 
-  // Parse passengers from URL parameters
   const parsePassengers = (): Passenger[] => {
     const passengers: Passenger[] = [];
   
@@ -129,6 +128,67 @@ const FlightResultsPage = () => {
   
     return passengers;
   };
+
+  const getSortedAndFilteredFlights = (flights: any[], options: Partial<SortOption>) => {
+    if (!flights.length) return [];
+    
+    // Create a new array with calculated fares
+    const flightsWithFares = flights.map(flight => {
+      const getFare = (flight: any) => {
+        try {
+          // Try Pricing.totalPayable.total first
+          if (flight.Pricing?.totalPayable?.total) {
+            return parseFloat(flight.Pricing.totalPayable.total);
+          }
+
+          // Then try FareDetails[0].SubTotal
+          if (flight.FareDetails?.[0]?.SubTotal) {
+            return parseFloat(flight.FareDetails[0].SubTotal);
+          }
+
+          // Then try Pricing.gross.total
+          if (flight.Pricing?.gross?.total) {
+            return parseFloat(flight.Pricing.gross.total);
+          }
+
+          // Finally try BaseFare
+          if (flight.FareDetails?.[0]?.BaseFare) {
+            return parseFloat(flight.FareDetails[0].BaseFare);
+          }
+
+          console.warn('No fare found for flight:', flight.OfferId);
+          return 0;
+        } catch (error) {
+          console.error('Error parsing fare for flight:', flight.OfferId, error);
+          return 0;
+        }
+      };
+
+      // Calculate and store the fare
+      const calculatedFare = getFare(flight);
+      return {
+        ...flight,
+        fare: calculatedFare
+      };
+    });
+
+    // Sort the flights if fare option is set
+    if (options.fare) {
+      flightsWithFares.sort((a, b) => {
+        const fareA = a.fare;
+        const fareB = b.fare;
+
+        console.log(`Sorting flights: ${a.OfferId}(${fareA}) ${options.fare === 'highToLow' ? '>' : '<'} ${b.OfferId}(${fareB})`);
+
+        if (options.fare === 'highToLow') {
+          return fareB - fareA;
+        }
+        return fareA - fareB;
+      });
+    }
+
+    return flightsWithFares;
+  };
   
   const fetchFlights = async () => {
     setLoading(true);
@@ -139,8 +199,14 @@ const FlightResultsPage = () => {
       const tripType = searchParams?.get('tripType');
       const cabinClass = searchParams?.get('class') || 'Economy';
 
+      // Log segments for debugging
+      console.log('Parsed segments:', segments);
+
+      // Don't throw error, just return early if no segments
       if (segments.length === 0) {
-        throw new Error("No valid flight segments found");
+        setError("Please select valid flight segments");
+        setLoading(false);
+        return;
       }
 
       const requestBody = {
@@ -163,8 +229,6 @@ const FlightResultsPage = () => {
         }
       };
 
-      console.log("Final Request Body:", JSON.stringify(requestBody, null, 2));
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/combined/search`, {
         method: 'POST',
         headers: {
@@ -178,12 +242,17 @@ const FlightResultsPage = () => {
       }
 
       const data = await response.json();
-      setFlightResults(data.flights || []);
-      sessionStorage.setItem("flightResults", JSON.stringify(data.flights));
+      const flights = data.flights || [];
+      setFlightResults(flights);
+      // Sort flights with initial sort options
+      const sortedResults = getSortedAndFilteredFlights(flights, sortOptions);
+      setSortedFlights(sortedResults);
+      sessionStorage.setItem("flightResults", JSON.stringify(flights));
     } catch (error) {
       console.error('Error fetching flights:', error);
       setError('Failed to fetch flight results. Please try again.');
       setFlightResults([]);
+      setSortedFlights([]);
     } finally {
       setLoading(false);
     }
@@ -215,58 +284,59 @@ const FlightResultsPage = () => {
   const getLowestFare = (flights: any[]) => {
     if (!flights.length) return undefined;
     
-    // Debug log
-    console.log("Sample flight data:", flights[0]);
-    
     const fares = flights.map(flight => {
-      // Extract fare from flight response structure
       const fare = flight.fareAmount || 
                   flight.fareDetails?.fareAmount || 
                   flight.fareInfo?.fareAmount || 
                   flight.adultFare?.amount ||
                   flight.amount ||
-                  3231; // Fallback to example fare
+                  0;
                   
-      console.log("Extracted fare:", fare); // Debug log
       return parseFloat(fare);
     });
     
-    console.log("All fares:", fares); // Debug log
     return Math.min(...fares);
   };
 
   const getAvailableAirlines = () => {
     const airlines = new Set<string>();
     flightResults.forEach(flight => {
-      // Adjust this based on your flight data structure
-      const airline = flight.airline || flight.carrierName || flight.operatingCarrier;
-      if (airline) {
-        airlines.add(airline);
-      }
+      const segments = flight.OutboundSegments || [];
+      segments.forEach((segment: any) => {
+        const airline = segment?.MarketingCarrier?.carrierName;
+        if (airline) {
+          airlines.add(airline);
+        }
+      });
     });
     return Array.from(airlines);
   };
 
-  const getSortedAndFilteredFlights = () => {
-    let sorted = [...flightResults];
-
-    // Apply sorting based on options
-    if (sortOptions.fare) {
-      sorted.sort((a, b) => {
-        const fareA = a.fareAmount || a.amount || 0;
-        const fareB = b.fareAmount || b.amount || 0;
-        return sortOptions.fare === 'lowToHigh' ? fareA - fareB : fareB - fareA;
-      });
-    }
-
-    // Apply other sorting/filtering logic here...
-
-    return sorted;
+  const handleSortChange = (newOptions: Partial<SortOption>) => {
+    console.log('Sort option changed to:', newOptions);
+    
+    // Create new sort options
+    const updatedOptions = { ...sortOptions, ...newOptions };
+    
+    // Apply sorting immediately with fresh copy of flights
+    const newSortedFlights = getSortedAndFilteredFlights([...flightResults], updatedOptions);
+    
+    // Update both state values
+    setSortOptions(updatedOptions);
+    setSortedFlights(newSortedFlights);
   };
 
   useEffect(() => {
     fetchFlights();
   }, [searchParams]);
+
+  useEffect(() => {
+    if (flightResults.length > 0) {
+      console.log('Initial sort with options:', sortOptions);
+      const sorted = getSortedAndFilteredFlights([...flightResults], sortOptions);
+      setSortedFlights(sorted);
+    }
+  }, [flightResults]);
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
@@ -282,7 +352,7 @@ const FlightResultsPage = () => {
       />
 
       <FlightSortingOptions
-        onSortChange={(newOptions) => setSortOptions({ ...sortOptions, ...newOptions })}
+        onSortChange={handleSortChange}
         availableAirlines={getAvailableAirlines()}
         currentSort={sortOptions}
       />
@@ -303,12 +373,12 @@ const FlightResultsPage = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
             <span className="ml-3 text-gray-600 dark:text-gray-400">Searching for flights...</span>
           </div>
-        ) : flightResults.length > 0 ? (
-          <FlightResultsList flights={getSortedAndFilteredFlights()} />
+        ) : sortedFlights.length > 0 ? (
+          <FlightResultsList flights={sortedFlights} />
         ) : !error && (
           <p className="text-gray-600 dark:text-gray-400 text-center py-8">
             No flights found for your search criteria. Please try different dates or routes.
-          </p>
+            </p>
         )}
       </div>
     </div>
