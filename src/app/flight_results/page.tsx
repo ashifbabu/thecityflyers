@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ModifySearch from '@/components/search/flights/modify/ModifySearch';
 import FlightResultsList from '@/components/search/flights/results/FlightResultsList';
 import { getApiTripType } from '@/components/search/flights/button/SearchButton';
+import FlightCalendarSection from '@/components/search/flights/calendar/FlightCalendarSection';
+import FlightSortingOptions, { SortOption } from '@/components/search/flights/sort/FlightSortingOptions';
 
 interface FlightSegment {
   fromCode: string;
@@ -18,10 +20,28 @@ interface Passenger {
 }
 
 const FlightResultsPage = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [flightResults, setFlightResults] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [departureDate, setDepartureDate] = useState<Date | null>(() => {
+    const departureDateStr = searchParams.get('departure');
+    return departureDateStr ? new Date(departureDateStr) : null;
+  });
+  
+  const [returnDate, setReturnDate] = useState<Date | null>(() => {
+    const returnDateStr = searchParams.get('return');
+    return returnDateStr ? new Date(returnDateStr) : null;
+  });
+
+  const [sortOptions, setSortOptions] = useState<Partial<SortOption>>({
+    fare: 'lowToHigh',
+    stops: [],
+    takeoff: 'earlierToLater',
+    airline: [],
+    layovers: 'lowToHigh'
+  });
 
   // Format date to YYYY-MM-DD
   const formatDate = (dateStr?: string): string | undefined => {
@@ -110,72 +130,163 @@ const FlightResultsPage = () => {
     return passengers;
   };
   
-  useEffect(() => {
-    const fetchFlights = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const segments = parseFlightSegments();
-        const passengers = parsePassengers();
-        const tripType = searchParams?.get('tripType');
-        const cabinClass = searchParams?.get('class') || 'Economy';
+  const fetchFlights = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const segments = parseFlightSegments();
+      const passengers = parsePassengers();
+      const tripType = searchParams?.get('tripType');
+      const cabinClass = searchParams?.get('class') || 'Economy';
 
-        if (segments.length === 0) {
-          throw new Error("No valid flight segments found");
-        }
-
-        const requestBody = {
-          pointOfSale: "BD",
-          source: "bdfare",
-          request: {
-            originDest: segments.map(segment => ({
-              originDepRequest: { iatA_LocationCode: segment.fromCode, date: segment.date },
-              destArrivalRequest: { iatA_LocationCode: segment.toCode }
-            })),
-            pax: passengers,
-            shoppingCriteria: {
-              tripType: getApiTripType(tripType as any),
-              travelPreferences: {
-                vendorPref: [],
-                cabinCode: cabinClass
-              },
-              returnUPSellInfo: true
-            }
-          }
-        };
-
-        console.log("Final Request Body:", JSON.stringify(requestBody, null, 2));
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/combined/search`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody)
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setFlightResults(data.flights || []);
-        sessionStorage.setItem("flightResults", JSON.stringify(data.flights));
-      } catch (error) {
-        console.error('Error fetching flights:', error);
-        setError('Failed to fetch flight results. Please try again.');
-        setFlightResults([]);
-      } finally {
-        setLoading(false);
+      if (segments.length === 0) {
+        throw new Error("No valid flight segments found");
       }
-    };
 
+      const requestBody = {
+        pointOfSale: "BD",
+        source: "bdfare",
+        request: {
+          originDest: segments.map(segment => ({
+            originDepRequest: { iatA_LocationCode: segment.fromCode, date: segment.date },
+            destArrivalRequest: { iatA_LocationCode: segment.toCode }
+          })),
+          pax: passengers,
+          shoppingCriteria: {
+            tripType: getApiTripType(tripType as any),
+            travelPreferences: {
+              vendorPref: [],
+              cabinCode: cabinClass
+            },
+            returnUPSellInfo: true
+          }
+        }
+      };
+
+      console.log("Final Request Body:", JSON.stringify(requestBody, null, 2));
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/combined/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setFlightResults(data.flights || []);
+      sessionStorage.setItem("flightResults", JSON.stringify(data.flights));
+    } catch (error) {
+      console.error('Error fetching flights:', error);
+      setError('Failed to fetch flight results. Please try again.');
+      setFlightResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSearchParams = (type: 'departure' | 'return', date: Date) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const formattedDate = date.toISOString().split('T')[0];
+    
+    if (type === 'departure') {
+      params.set('departure', formattedDate);
+    } else {
+      params.set('return', formattedDate);
+    }
+    
+    router.push(`/flight_results?${params.toString()}`);
+  };
+
+  const handleDepartureDateSelect = (date: Date) => {
+    setDepartureDate(date);
+    updateSearchParams('departure', date);
+  };
+
+  const handleReturnDateSelect = (date: Date) => {
+    setReturnDate(date);
+    updateSearchParams('return', date);
+  };
+
+  const getLowestFare = (flights: any[]) => {
+    if (!flights.length) return undefined;
+    
+    // Debug log
+    console.log("Sample flight data:", flights[0]);
+    
+    const fares = flights.map(flight => {
+      // Extract fare from flight response structure
+      const fare = flight.fareAmount || 
+                  flight.fareDetails?.fareAmount || 
+                  flight.fareInfo?.fareAmount || 
+                  flight.adultFare?.amount ||
+                  flight.amount ||
+                  3231; // Fallback to example fare
+                  
+      console.log("Extracted fare:", fare); // Debug log
+      return parseFloat(fare);
+    });
+    
+    console.log("All fares:", fares); // Debug log
+    return Math.min(...fares);
+  };
+
+  const getAvailableAirlines = () => {
+    const airlines = new Set<string>();
+    flightResults.forEach(flight => {
+      // Adjust this based on your flight data structure
+      const airline = flight.airline || flight.carrierName || flight.operatingCarrier;
+      if (airline) {
+        airlines.add(airline);
+      }
+    });
+    return Array.from(airlines);
+  };
+
+  const getSortedAndFilteredFlights = () => {
+    let sorted = [...flightResults];
+
+    // Apply sorting based on options
+    if (sortOptions.fare) {
+      sorted.sort((a, b) => {
+        const fareA = a.fareAmount || a.amount || 0;
+        const fareB = b.fareAmount || b.amount || 0;
+        return sortOptions.fare === 'lowToHigh' ? fareA - fareB : fareB - fareA;
+      });
+    }
+
+    // Apply other sorting/filtering logic here...
+
+    return sorted;
+  };
+
+  useEffect(() => {
     fetchFlights();
   }, [searchParams]);
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="container mx-auto px-4 py-8 space-y-6">
       <ModifySearch />
+      
+      <FlightCalendarSection
+        departureDate={departureDate || undefined}
+        returnDate={returnDate || undefined}
+        onDepartureDateSelect={handleDepartureDateSelect}
+        onReturnDateSelect={handleReturnDateSelect}
+        lowestDepartureFare={getLowestFare(flightResults.filter(f => !f.isReturn))}
+        lowestReturnFare={getLowestFare(flightResults.filter(f => f.isReturn))}
+      />
+
+      <FlightSortingOptions
+        onSortChange={(newOptions) => setSortOptions({ ...sortOptions, ...newOptions })}
+        availableAirlines={getAvailableAirlines()}
+        currentSort={sortOptions}
+      />
+      
       <div className="bg-white dark:bg-black p-6 rounded-lg border border-gray-200 dark:border-gray-800">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Flight Results
@@ -193,7 +304,7 @@ const FlightResultsPage = () => {
             <span className="ml-3 text-gray-600 dark:text-gray-400">Searching for flights...</span>
           </div>
         ) : flightResults.length > 0 ? (
-          <FlightResultsList flights={flightResults} />
+          <FlightResultsList flights={getSortedAndFilteredFlights()} />
         ) : !error && (
           <p className="text-gray-600 dark:text-gray-400 text-center py-8">
             No flights found for your search criteria. Please try different dates or routes.

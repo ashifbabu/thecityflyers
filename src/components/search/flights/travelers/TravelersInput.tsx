@@ -97,28 +97,36 @@ const TravelersInput: React.FC<TravelersInputProps> = ({ value, subValue, onClic
       {isOpen && (
         <div ref={modalRef} className="absolute z-10 w-full bg-white dark:bg-black text-black dark:text-white shadow-lg mt-2 py-4 rounded-lg">
           <div className="px-4 space-y-4">
-            {['adults', 'kids', 'children', 'infants'].map((type) => (
-              <div key={type}>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+            {['adults', 'kids', 'children', 'infants'].map((type) => {
+              const maxLength = type === 'infants' ? 3 : 
+                               (type === 'kids' || type === 'children') ? 6 : 
+                               Math.min(10, (type === 'adults' ? adults : type === 'kids' ? kids : type === 'children' ? children : infants) + remainingPassengers + 1);
+
+              return (
+                <div key={type}>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {Array.from({ length: maxLength + 1 }, (_, num) => (
+                      (num !== 0 || type === 'adults') && (
+                        <button
+                          key={num}
+                          onClick={() => handleTravelerChange(type as any, num)}
+                          className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
+                            (type === 'adults' ? adults : type === 'kids' ? kids : type === 'children' ? children : infants) === num
+                              ? 'bg-black dark:bg-white text-white dark:text-black'
+                              : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      )
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: Math.min(10, (type === 'adults' ? adults : type === 'kids' ? kids : type === 'children' ? children : infants) + remainingPassengers + 1) }, (_, num) => (
-                    <button
-                      key={num}
-                      onClick={() => handleTravelerChange(type as any, num)}
-                      className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
-                        (type === 'adults' ? adults : type === 'kids' ? kids : type === 'children' ? children : infants) === num
-                          ? 'bg-black dark:bg-white text-white dark:text-black'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-                      }`}
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="mt-4">
               <div className="text-sm text-gray-600 dark:text-gray-400">Travel Class</div>

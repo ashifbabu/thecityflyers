@@ -50,7 +50,7 @@ const DateInput: React.FC<DateInputProps> = ({
   };
 
   const disabledDays = {
-    before: type === 'return' && departureDate ? addDays(departureDate, 1) : minSelectableDate,
+    before: type === 'return' && departureDate ? departureDate : minSelectableDate,
   };
 
   const formattedDate = selectedDate

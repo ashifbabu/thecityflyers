@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, addDays, isSameDay, startOfDay } from 'date-fns';
+import { format, addDays, isSameDay, startOfDay, isBefore } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTripType } from '@/hooks/use-trip-type';
 
@@ -13,6 +13,7 @@ interface FlightSuggestionCalendarProps {
   maxDate?: Date;
   prices?: Record<string, number>;
   className?: string;
+  lowestFare?: number;
 }
 
 const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
@@ -22,6 +23,7 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
   maxDate,
   prices = {},
   className,
+  lowestFare,
 }) => {
   const { tripType } = useTripType();
   const [currentDate, setCurrentDate] = useState(selectedDate);
@@ -73,6 +75,12 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
     }).format(price);
   };
 
+  const today = startOfDay(new Date());
+  
+  const isDateDisabled = (date: Date) => {
+    return isBefore(date, today);
+  };
+
   return (
     <div className={cn(
       "w-full px-2 py-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-800",
@@ -95,6 +103,7 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
             const isSelected = selectedDate && isSameDay(date, selectedDate);
             const dateKey = format(date, 'yyyy-MM-dd');
             const price = prices[dateKey] || 20856;
+            const isDisabled = isDateDisabled(date);
             
             return (
               <button
@@ -109,9 +118,10 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
                   isSelected 
                     ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900" 
                     : "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
-                  "border border-gray-200 dark:border-gray-700"
+                  "border border-gray-200 dark:border-gray-700",
+                  isDisabled && "opacity-50 cursor-not-allowed"
                 )}
-                disabled={date < startOfDay(minDate)}
+                disabled={isDisabled}
               >
                 <span className="text-xs sm:text-sm font-medium">
                   {format(date, 'MMM d')}
@@ -125,7 +135,9 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
                     ? "text-white dark:text-gray-900" 
                     : "text-gray-900 dark:text-gray-100"
                 )}>
-                  {formatPrice(price)}
+                  {isSelected && lowestFare 
+                    ? formatPrice(lowestFare)
+                    : "View fare"}
                 </span>
               </button>
             );
