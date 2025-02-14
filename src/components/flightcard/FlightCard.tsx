@@ -107,14 +107,23 @@ interface FlightOffer {
 const DEFAULT_AIRLINE_LOGO = '/default-logo.png';
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
+  // Create date object while preserving the date exactly as provided
+  const date = new Date(dateString);
+  const utcDate = new Date(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes()
+  );
+
   return {
-    time: date.toLocaleTimeString("en-US", {
+    time: utcDate.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     }),
-    date: date.toLocaleDateString("en-US", {
+    date: utcDate.toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
       day: "numeric",

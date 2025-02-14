@@ -35,25 +35,28 @@ const ModifySearch = () => {
   // Initialize state with URL parameters
   const [searchData, setSearchData] = useState({
     fromCity: searchParams?.get('fromCity') || '',
-    fromAirport: searchParams?.get('fromAirport') || '',
+    fromAirport: searchParams?.get('from') || '',
     toCity: searchParams?.get('toCity') || '',
-    toAirport: searchParams?.get('toAirport') || '',
-    departureDate: searchParams?.get('departureDate') 
-      ? new Date(searchParams?.get('departureDate')!) 
+    toAirport: searchParams?.get('to') || '',
+    departureDate: searchParams?.get('departure')
+      ? new Date(searchParams?.get('departure')!)
       : undefined,
-    returnDate: searchParams?.get('returnDate')
-      ? new Date(searchParams?.get('returnDate')!)
+    returnDate: searchParams?.get('return')
+      ? new Date(searchParams?.get('return')!)
       : undefined,
     travelers: {
-      adults: 1,
-      kids: 0,
-      children: 0,
-      infants: 0,
-      totalPassengers: 1,
-      travelClass: 'Economy',
+      adults: Number(searchParams?.get('adults')) || 1,
+      kids: Number(searchParams?.get('kids')) || 0,
+      children: Number(searchParams?.get('children')) || 0,
+      infants: Number(searchParams?.get('infants')) || 0,
+      totalPassengers: Number(searchParams?.get('adults')) + 
+                      Number(searchParams?.get('kids')) + 
+                      Number(searchParams?.get('children')) + 
+                      Number(searchParams?.get('infants')) || 1,
+      travelClass: searchParams?.get('class') || 'Economy'
     },
     class: searchParams?.get('class') || 'Economy',
-    fareType: searchParams?.get('fareType') || 'regular',
+    fareType: searchParams?.get('fareType') || 'Regular',
     flights: parseFlights()
   });
 
@@ -80,13 +83,19 @@ const ModifySearch = () => {
     }));
   };
 
-  // Format date for display
+  // Format date to show just the date and month
   const formatDate = (date?: Date) => {
     if (!date) return '';
-    return date.toLocaleDateString('en-US', {
-      day: 'numeric',
+    // Create a new date object preserving the exact date
+    const utcDate = new Date(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate()
+    );
+    
+    return utcDate.toLocaleDateString('en-US', {
       month: 'short',
-      year: 'numeric'
+      day: 'numeric'
     });
   };
 
@@ -120,9 +129,16 @@ const ModifySearch = () => {
     ));
   };
 
+  // Add this helper function to format the airport code
+  const formatLocation = (city: string, airport: string) => {
+    if (city && airport) {
+      return `${city} (${airport})`;
+    }
+    return 'Select location';
+  };
+
   // Handle search submission
   const handleSearch = () => {
-    // Construct search params
     const params = new URLSearchParams({
       tripType,
       fromCity: searchData.fromCity,
@@ -133,7 +149,7 @@ const ModifySearch = () => {
       ...(tripType === 'roundTrip' && searchData.returnDate && {
         returnDate: searchData.returnDate.toISOString()
       }),
-      travelers: searchData.travelers.toString(),
+      travelers: JSON.stringify(searchData.travelers),
       class: searchData.class,
       fareType: searchData.fareType,
       ...(tripType === 'multiCity' && {
@@ -141,91 +157,96 @@ const ModifySearch = () => {
       })
     });
 
-    // Update URL and trigger search
     router.push(`/flight_results?${params.toString()}`);
-    setIsExpanded(false);// Collapse after search
+    setIsExpanded(false);
   };
 
   return (
-    <div className="bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-      {/* Collapsed View */}
-      <div 
-        className="p-4 cursor-pointer relative"
-        onClick={() => !isExpanded && setIsExpanded(true)}
-      >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+    <div className="bg-white dark:bg-black p-2 sm:p-4">
+      {/* Collapsed Search Summary Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+        {/* Search Info - Wrapping Container */}
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm">
           {/* Trip Type */}
-          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <span className="font-medium whitespace-nowrap">
             {tripType === 'oneWay' ? 'One Way' : tripType === 'roundTrip' ? 'Round Trip' : 'Multi City'}
-          </div>
+          </span>
+          
+          {tripType === 'multiCity' ? (
+            // Multi City Format with Dates
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+              {searchData.flights.map((flight: any, index: number) => (
+                <React.Fragment key={index}>
+                  {index > 0 && <span className="text-gray-400">→</span>}
+                  <span className="whitespace-nowrap">{flight.fromCity || flight.fromAirportCode}</span>
+                  {index === searchData.flights.length - 1 && (
+                    <>
+                      <span className="text-gray-400">→</span>
+                      <span className="whitespace-nowrap">{flight.toCity || flight.toAirportCode}</span>
+                    </>
+                  )}
+                </React.Fragment>
+              ))}
+              
+              {/* Show dates for each flight segment */}
+              {searchData.flights.map((flight: any, index: number) => (
+                <React.Fragment key={`date-${index}`}>
+                  <span className="text-gray-400">•</span>
+                  <span className="whitespace-nowrap">
+                    {flight.departureDate ? 
+                      formatDate(new Date(flight.departureDate)) : 
+                      'Select date'}
+                  </span>
+                </React.Fragment>
+              ))}
+            </div>
+          ) : (
+            // One Way and Round Trip Format
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+              <span className="text-gray-400">→</span>
+              <span className="whitespace-nowrap">{searchData.fromCity || searchData.fromAirport}</span>
+              <span className="text-gray-400">→</span>
+              <span className="whitespace-nowrap">{searchData.toCity || searchData.toAirport}</span>
+              <span className="text-gray-400">•</span>
+              <span className="whitespace-nowrap">
+                {searchData.departureDate ? formatDate(searchData.departureDate) : 'Select date'}
+              </span>
+              {tripType === 'roundTrip' && searchData.returnDate && (
+                <>
+                  <span className="text-gray-400">•</span>
+                  <span className="whitespace-nowrap">{formatDate(searchData.returnDate)}</span>
+                </>
+              )}
+            </div>
+          )}
 
-          {/* Route and Dates */}
-          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            {tripType === 'multiCity' ? (
-              <>
-                <div className="flex flex-wrap items-center">
-                  {renderMultiCityRoute()}
-                </div>
-                <span>•</span>
-                <div className="flex flex-wrap items-center">
-                  {renderMultiCityDates()}
-                </div>
-              </>
-            ) : (
-              <>
-                <span>{searchData.fromCity}</span>
-                <span>→</span>
-                <span>{searchData.toCity}</span>
-                <span>•</span>
-                <span>{formatDate(searchData.departureDate)}</span>
-                {tripType === 'roundTrip' && searchData.returnDate && (
-                  <>
-                    <span>-</span>
-                    <span>{formatDate(searchData.returnDate)}</span>
-                  </>
-                )}
-              </>
-            )}
-          </div>
+          {/* Travelers */}
+          <span className="text-gray-400">•</span>
+          <span className="whitespace-nowrap">
+            {searchData.travelers.totalPassengers} Traveler{searchData.travelers.totalPassengers > 1 ? 's' : ''}
+          </span>
 
-          {/* Travelers and Class */}
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-          <span>{searchData.travelers.totalPassengers} Traveler{searchData.travelers.totalPassengers > 1 ? 's' : ''}</span>
-            <span> • </span>
-            <span>{searchData.class}</span>
-          </div>
+          {/* Class */}
+          <span className="text-gray-400">•</span>
+          <span className="whitespace-nowrap">{searchData.class}</span>
+
+          {/* Fare Type */}
+          <span className="text-gray-400">•</span>
+          <span className="whitespace-nowrap">{searchData.fareType} Fare</span>
         </div>
 
-        {/* Modify Button (Visible only in collapsed state) */}
-        {!isExpanded && (
-          <button
-            type="button"
-            className="absolute right-4 top-1/2 -translate-y-1/2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-md shadow-sm hover:bg-gray-700 dark:hover:bg-gray-300"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(true);
-            }}
-          >
-            Modify
-          </button>
-        )}
-
-        {/* Expand/Collapse Button */}
-        {isExpanded && (
-          <button
-            type="button"
-            className="absolute right-4 top-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            onClick={() => setIsExpanded(false)}
-            aria-label="Collapse search form"
-          >
-            <ChevronUpIcon className="h-5 w-5" />
-          </button>
-        )}
+        {/* Modify Button */}
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="px-4 py-2 bg-black text-white text-sm rounded-md hover:bg-gray-800 whitespace-nowrap ml-auto sm:ml-0"
+        >
+          Modify
+        </button>
       </div>
 
-      {/* Expanded Search Form */}
+      {/* Expanded Form */}
       {isExpanded && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+        <div className="mt-4 border-t border-gray-200 pt-4">
           {/* Error Messages */}
           {errors.length > 0 && (
             <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -246,11 +267,12 @@ const ModifySearch = () => {
 
           {tripType === 'multiCity' ? (
             <MultiCityContent 
-            initialFlights={searchData.flights}
-            initialTravelers={searchData.travelers.totalPassengers} // ✅ Fixed: Passing totalPassengers instead of the whole travelers object
-            initialClass={searchData.class}
+              initialFlights={searchData.flights}
+              initialTravelers={searchData.travelers.totalPassengers}
+              initialClass={searchData.class}
             />
           ) : (
+            // One Way and Round Trip Form
             <>
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Location Selection */}
