@@ -35,22 +35,25 @@ interface Segment {
 }
 
 interface Pricing {
-  totalPayable: {
-    total: number
-    currency: string
-  }
-  gross: {
-    total: number
-    currency: string
-  }
-  totalVAT: {
-    total: number
-    currency: string
-  }
+  PriceBreakdown: {
+    Outbound: {
+      totalPayable: {
+        total: number;
+        currency: string;
+      };
+    };
+    Inbound: {
+      totalPayable: {
+        total: number;
+        currency: string;
+      };
+    };
+  };
 }
 
 interface MultiCityOffer {
   OutboundSegments: Segment[]
+  InboundSegments?: Segment[]
   Pricing: Pricing
   Refundable: boolean
   ValidatingCarrier: string
@@ -130,16 +133,36 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
   const [selectedFare, setSelectedFare] = useState("ECONOMY STANDARD")
   const [activeTab, setActiveTab] = useState<"flight-details" | "fare-summary" | "baggage" | null>(null)
 
-  // Group segments by SegmentGroup
-  const tripGroups = multiCityOffer.OutboundSegments.reduce(
-    (groups, segment) => {
-      const group = groups[segment.SegmentGroup] || []
-      group.push(segment)
-      groups[segment.SegmentGroup] = group
-      return groups
+  // Combine outbound and inbound segments into trips
+  const allSegments = [
+    ...(multiCityOffer.OutboundSegments || []),
+    ...(multiCityOffer.InboundSegments || [])
+  ];
+
+  // Group segments into trips
+  const tripGroups = allSegments.reduce(
+    (groups: Record<number, Segment[]>, segment, index) => {
+      // Use index as group number if SegmentGroup is not available
+      const groupNumber = segment.SegmentGroup ?? index;
+      const group = groups[groupNumber] || [];
+      group.push(segment);
+      groups[groupNumber] = group;
+      return groups;
     },
-    {} as Record<number, Segment[]>,
-  )
+    {}
+  );
+
+  // Get price display
+  const getPriceBreakdown = () => {
+    const outboundTotal = multiCityOffer.Pricing?.PriceBreakdown?.Outbound?.totalPayable?.total || 0;
+    const inboundTotal = multiCityOffer.Pricing?.PriceBreakdown?.Inbound?.totalPayable?.total || 0;
+    const currency = multiCityOffer.Pricing?.PriceBreakdown?.Outbound?.totalPayable?.currency || 'BDT';
+    
+    return {
+      currency,
+      total: outboundTotal + inboundTotal
+    };
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -150,14 +173,14 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <img
-                src={multiCityOffer.OutboundSegments[0]?.Logo || "/placeholder.svg"}
-                alt={multiCityOffer.OutboundSegments[0]?.MarketingCarrier.carrierName}
+                src={allSegments[0]?.Logo || "/placeholder.svg"}
+                alt={allSegments[0]?.MarketingCarrier.carrierName}
                 className="w-8 h-8"
               />
               <div>
-                <div className="font-medium">{multiCityOffer.OutboundSegments[0]?.MarketingCarrier.carrierName}</div>
+                <div className="font-medium">{allSegments[0]?.MarketingCarrier.carrierName}</div>
                 <div className="text-sm text-muted-foreground">
-                  {multiCityOffer.OutboundSegments.map((seg) => seg.FlightNumber).join(", ")}
+                  {allSegments.map((seg) => seg.FlightNumber).join(", ")}
                 </div>
               </div>
               {multiCityOffer.Refundable && (
@@ -170,7 +193,11 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
             {/* Trip Segments */}
             <div className="space-y-4">
               {Object.entries(tripGroups).map(([groupId, segments]) => (
-                <TripSegment key={groupId} segments={segments} tripNumber={Number.parseInt(groupId)} />
+                <TripSegment 
+                  key={groupId} 
+                  segments={segments} 
+                  tripNumber={Number.parseInt(groupId)} 
+                />
               ))}
             </div>
           </div>
@@ -212,8 +239,8 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
             {/* Price and Action */}
             <div className="mt-6 text-right">
               <div className="text-3xl font-bold">
-                {multiCityOffer.Pricing.totalPayable.currency}{" "}
-                {multiCityOffer.Pricing.totalPayable.total.toLocaleString()}
+                {getPriceBreakdown().currency}{" "}
+                {getPriceBreakdown().total.toLocaleString()}
               </div>
               <div className="text-sm text-muted-foreground mb-4">Price per adult</div>
               <Button className="w-full">
