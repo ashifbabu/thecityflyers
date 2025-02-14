@@ -14,12 +14,14 @@ interface FlightSegment {
     Terminal: string
     ScheduledTime: string
     AirportName: string
+    CityName: string
   }
   Arrival: {
     IATACode: string
     Terminal: string
     ScheduledTime: string
     AirportName: string
+    CityName: string
   }
   MarketingCarrier: {
     carrierDesigCode: string
@@ -245,13 +247,13 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
     
     return {
       origin: {
-        city: origin.Departure.AirportName.split(' ')[0],
+        city: origin.Departure.CityName,
         code: origin.Departure.IATACode,
         airport: origin.Departure.AirportName,
         time: origin.Departure.ScheduledTime,
       },
       destination: {
-        city: destination.Arrival.AirportName.split(' ')[0],
+        city: destination.Arrival.CityName,
         code: destination.Arrival.IATACode,
         airport: destination.Arrival.AirportName,
         time: destination.Arrival.ScheduledTime,
@@ -555,7 +557,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                           <div className="grid sm:grid-cols-3 gap-6">
                             <div>
                               <div className="text-lg font-bold">
-                                {segment.Departure.AirportName.split(' ')[0]} ({segment.Departure.IATACode})
+                                {segment.Departure.CityName} ({segment.Departure.IATACode})
                               </div>
                               <div className="text-2xl font-bold my-1">{formatDate(segment.Departure.ScheduledTime).time}</div>
                               <div className="text-sm text-muted-foreground">
@@ -573,7 +575,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
 
                             <div className="text-right">
                               <div className="text-lg font-bold">
-                                {segment.Arrival.AirportName.split(' ')[0]} ({segment.Arrival.IATACode})
+                                {segment.Arrival.CityName} ({segment.Arrival.IATACode})
                               </div>
                               <div className="text-2xl font-bold my-1">{formatDate(segment.Arrival.ScheduledTime).time}</div>
                               <div className="text-sm text-muted-foreground">{formatDate(segment.Arrival.ScheduledTime).date}</div>
@@ -622,7 +624,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                           <div className="grid sm:grid-cols-3 gap-6">
                             <div>
                               <div className="text-lg font-bold">
-                                {segment.Departure.AirportName.split(' ')[0]} ({segment.Departure.IATACode})
+                                {segment.Departure.CityName} ({segment.Departure.IATACode})
                               </div>
                               <div className="text-2xl font-bold my-1">{formatDate(segment.Departure.ScheduledTime).time}</div>
                               <div className="text-sm text-muted-foreground">
@@ -640,7 +642,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
 
                             <div className="text-right">
                               <div className="text-lg font-bold">
-                                {segment.Arrival.AirportName.split(' ')[0]} ({segment.Arrival.IATACode})
+                                {segment.Arrival.CityName} ({segment.Arrival.IATACode})
                               </div>
                               <div className="text-2xl font-bold my-1">{formatDate(segment.Arrival.ScheduledTime).time}</div>
                               <div className="text-sm text-muted-foreground">{formatDate(segment.Arrival.ScheduledTime).date}</div>

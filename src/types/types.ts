@@ -1,9 +1,11 @@
 export interface FareFeatures {
     cancellationFee: string;
-    cabinBaggage: string;
+    cabinBaggage: boolean;
     mealBeverage: boolean;
-    preReservedSeat: boolean;
+    preReservedSeat: string | null;
+    milesPoints: string;
+    dateChange: string;
     premiumSeat: boolean;
-    freeDateChange: string;
+    freeDateChange: boolean;
   }
   
