@@ -38,9 +38,9 @@ const FlightResultsPage = () => {
   const [sortOptions, setSortOptions] = useState<Partial<SortOption>>({
     fare: 'lowToHigh',
     stops: [],
-    takeoff: 'earlierToLater',
+    takeoff: undefined,
     airline: [],
-    layovers: 'lowToHigh'
+    layovers: undefined
   });
 
   const [sortedFlights, setSortedFlights] = useState<any[]>([]);
@@ -129,65 +129,192 @@ const FlightResultsPage = () => {
     return passengers;
   };
 
+  const getFare = (flight: any): number => {
+    if (!flight) {
+      console.warn('Flight object is undefined');
+      return 0;
+    }
+
+    try {
+      // First try to get fare from totalAmount
+      if (flight.totalAmount) {
+        return parseFloat(flight.totalAmount);
+      }
+
+      // Try to get from Price field
+      if (flight.Price) {
+        return parseFloat(flight.Price);
+      }
+
+      // Try to get from simple fare structure
+      if (flight.fare) {
+        return parseFloat(flight.fare);
+      }
+
+      // Try to get from detailed pricing structure
+      if (flight.Pricing) {
+        // Try totalPayable first
+        if (flight.Pricing.totalPayable?.total) {
+          return parseFloat(flight.Pricing.totalPayable.total);
+        }
+
+        // Try BaseFare + Taxes
+        if (flight.Pricing.BaseFare) {
+          let total = parseFloat(flight.Pricing.BaseFare);
+          if (flight.Pricing.Taxes) {
+            total += flight.Pricing.Taxes.reduce((sum: number, tax: any) => 
+              sum + parseFloat(tax.Amount || 0), 0);
+          }
+          return total;
+        }
+
+        // Try FareDetails structure
+        if (flight.Pricing.FareDetails) {
+          let total = 0;
+          
+          // Handle outbound fare
+          if (flight.Pricing.FareDetails.Outbound?.[0]) {
+            const outbound = flight.Pricing.FareDetails.Outbound[0];
+            total += parseFloat(outbound.BaseFare || 0) + 
+                    parseFloat(outbound.Tax || 0) + 
+                    parseFloat(outbound.VAT || 0);
+          }
+          
+          // Handle inbound fare for return flights
+          if (flight.Pricing.FareDetails.Inbound?.[0]) {
+            const inbound = flight.Pricing.FareDetails.Inbound[0];
+            total += parseFloat(inbound.BaseFare || 0) + 
+                    parseFloat(inbound.Tax || 0) + 
+                    parseFloat(inbound.VAT || 0);
+          }
+
+          if (total > 0) return total;
+        }
+      }
+
+      // Log the flight object for debugging if no fare structure is found
+      console.warn('No valid fare structure found for flight:', flight);
+      return 0;
+
+    } catch (error) {
+      console.error('Error calculating fare:', error);
+      return 0;
+    }
+  };
+
+  // Helper function to safely parse currency values
+  const parseCurrency = (value: string | number): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      // Remove currency symbols and commas, then parse
+      const cleanValue = value.replace(/[^0-9.-]+/g, '');
+      return parseFloat(cleanValue) || 0;
+    }
+    return 0;
+  };
+
+  const getDepartureTime = (flight: any) => {
+    try {
+      if (!flight) {
+        console.error('Flight object is null or undefined');
+        return 0;
+      }
+
+      const flightId = flight.OfferId || flight.id || 'unknown';
+
+      // Check OutboundSegments[0].Departure.ScheduledTime
+      if (flight.OutboundSegments?.[0]?.Departure?.ScheduledTime) {
+        const departureTime = flight.OutboundSegments[0].Departure.ScheduledTime;
+        const date = new Date(departureTime);
+        
+        if (!isNaN(date.getTime())) {
+          // Convert UTC to local time
+          const localDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }));
+          
+          // Calculate minutes since midnight
+          let timeValue = localDate.getHours() * 60 + localDate.getMinutes();
+          
+          // If the time is between 00:00 and 03:59, add 24 hours (1440 minutes)
+          // This ensures flights after midnight sort after flights from the previous day
+          if (timeValue < 240) { // 240 minutes = 4 hours
+            timeValue += 1440; // Add 24 hours worth of minutes
+          }
+          
+          console.log(`Flight ${flightId} departure time:`, {
+            raw: departureTime,
+            localTime: localDate.toLocaleTimeString(),
+            timeValue,
+            adjustedHours: Math.floor(timeValue / 60),
+            minutes: timeValue % 60,
+            isNextDay: timeValue > 1440
+          });
+          
+          return timeValue;
+        }
+      }
+
+      console.error('No departure time found. Flight structure:', {
+        flightId,
+        hasOutboundSegments: !!flight.OutboundSegments,
+        departureInfo: flight.OutboundSegments?.[0]?.Departure,
+        scheduledTime: flight.OutboundSegments?.[0]?.Departure?.ScheduledTime
+      });
+      return 0;
+    } catch (error) {
+      console.error('Error in getDepartureTime:', error);
+      return 0;
+    }
+  };
+
   const getSortedAndFilteredFlights = (flights: any[], options: Partial<SortOption>) => {
     if (!flights.length) return [];
     
-    // Create a new array with calculated fares
-    const flightsWithFares = flights.map(flight => {
-      const getFare = (flight: any) => {
-        try {
-          // Try Pricing.totalPayable.total first
-          if (flight.Pricing?.totalPayable?.total) {
-            return parseFloat(flight.Pricing.totalPayable.total);
-          }
-
-          // Then try FareDetails[0].SubTotal
-          if (flight.FareDetails?.[0]?.SubTotal) {
-            return parseFloat(flight.FareDetails[0].SubTotal);
-          }
-
-          // Then try Pricing.gross.total
-          if (flight.Pricing?.gross?.total) {
-            return parseFloat(flight.Pricing.gross.total);
-          }
-
-          // Finally try BaseFare
-          if (flight.FareDetails?.[0]?.BaseFare) {
-            return parseFloat(flight.FareDetails[0].BaseFare);
-          }
-
-          console.warn('No fare found for flight:', flight.OfferId);
-          return 0;
-        } catch (error) {
-          console.error('Error parsing fare for flight:', flight.OfferId, error);
-          return 0;
-        }
-      };
-
-      // Calculate and store the fare
+    // Create a new array with calculated details
+    const flightsWithDetails = flights.map(flight => {
       const calculatedFare = getFare(flight);
+      const departureTime = getDepartureTime(flight);
+      const numberOfStops = flight.OutboundSegments?.length - 1 || 0;
+      let layoverDuration = 0;
+
+      // Calculate total layover duration
+      if (flight.OutboundSegments?.length > 1) {
+        for (let i = 0; i < flight.OutboundSegments.length - 1; i++) {
+          const currentSegment = flight.OutboundSegments[i];
+          const nextSegment = flight.OutboundSegments[i + 1];
+          const arrival = new Date(currentSegment.Arrival.ScheduledTime);
+          const departure = new Date(nextSegment.Departure.ScheduledTime);
+          layoverDuration += (departure.getTime() - arrival.getTime()) / (1000 * 60);
+        }
+      }
+
       return {
         ...flight,
-        fare: calculatedFare
+        calculatedFare,
+        departureTime,
+        numberOfStops,
+        layoverDuration
       };
     });
 
-    // Sort the flights if fare option is set
-    if (options.fare) {
-      flightsWithFares.sort((a, b) => {
-        const fareA = a.fare;
-        const fareB = b.fare;
+    // Sort flights based on multiple criteria
+    return flightsWithDetails.sort((a, b) => {
+      // Primary sort: Fare
+      const fareDiff = options.fare === 'highToLow'
+        ? b.calculatedFare - a.calculatedFare
+        : a.calculatedFare - b.calculatedFare;
+      if (fareDiff !== 0) return fareDiff;
 
-        console.log(`Sorting flights: ${a.OfferId}(${fareA}) ${options.fare === 'highToLow' ? '>' : '<'} ${b.OfferId}(${fareB})`);
+      // Secondary sort: Departure time
+      const timeDiff = a.departureTime - b.departureTime;
+      if (timeDiff !== 0) return timeDiff;
 
-        if (options.fare === 'highToLow') {
-          return fareB - fareA;
-        }
-        return fareA - fareB;
-      });
-    }
+      // Tertiary sort: Number of stops
+      const stopsDiff = a.numberOfStops - b.numberOfStops;
+      if (stopsDiff !== 0) return stopsDiff;
 
-    return flightsWithFares;
+      // Final sort: Layover duration
+      return a.layoverDuration - b.layoverDuration;
+    });
   };
   
   const fetchFlights = async () => {
@@ -313,13 +440,27 @@ const FlightResultsPage = () => {
   };
 
   const handleSortChange = (newOptions: Partial<SortOption>) => {
-    console.log('Sort option changed to:', newOptions);
+    console.log('Sort options changed:', {
+      previous: sortOptions,
+      new: newOptions,
+      combined: { ...sortOptions, ...newOptions }
+    });
     
     // Create new sort options
     const updatedOptions = { ...sortOptions, ...newOptions };
     
+    console.log('Applying sort with flights:', {
+      numberOfFlights: flightResults.length,
+      firstFlight: flightResults[0]
+    });
+    
     // Apply sorting immediately with fresh copy of flights
     const newSortedFlights = getSortedAndFilteredFlights([...flightResults], updatedOptions);
+    
+    console.log('Sorting complete:', {
+      numberOfSortedFlights: newSortedFlights.length,
+      firstSortedFlight: newSortedFlights[0]
+    });
     
     // Update both state values
     setSortOptions(updatedOptions);
@@ -332,8 +473,21 @@ const FlightResultsPage = () => {
 
   useEffect(() => {
     if (flightResults.length > 0) {
-      console.log('Initial sort with options:', sortOptions);
+      console.log('Flight Results before sorting:', flightResults.map(f => ({
+        id: f.OfferId,
+        fare: getFare(f),
+        pricing: f.Pricing,
+        fareDetails: f.FareDetails
+      })));
+      
       const sorted = getSortedAndFilteredFlights([...flightResults], sortOptions);
+      
+      console.log('Sorted Results:', sorted.map(f => ({
+        id: f.OfferId,
+        fare: f.calculatedFare,
+        direction: f.isReturn ? 'Return' : 'Outbound'
+      })));
+      
       setSortedFlights(sorted);
     }
   }, [flightResults]);
