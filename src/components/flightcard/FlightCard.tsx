@@ -35,30 +35,45 @@ interface FlightSegment {
   ReturnJourney: boolean
 }
 
+interface BrandDetails {
+  rbd: string;
+  meal: boolean;
+  seat: string;
+  miles: string;
+  refundAllowed: boolean;
+  exchangeAllowed: boolean;
+}
+
 interface UpSellBrand {
   upSellBrand: {
-    offerId: string
-    brandName: string
-    refundable: boolean
+    offerId: string;
+    brandName: string;
+    refundable: boolean;
     price: {
       totalPayable: {
-        total: number
-        currency: string
-      }
-    }
+        total: number;
+        currency: string;
+      };
+    };
     baggageAllowanceList: Array<{
       baggageAllowance: {
         checkIn: Array<{
-          paxType: string
-          allowance: string
-        }>
+          paxType: string;
+          allowance: string;
+        }>;
         cabin: Array<{
-          paxType: string
-          allowance: string
-        }>
-      }
-    }>
-  }
+          paxType: string;
+          allowance: string;
+        }>;
+      };
+    }>;
+    rbd: string;
+    meal: boolean;
+    seat: string;
+    miles: string;
+    refundAllowed: boolean;
+    exchangeAllowed: boolean;
+  };
 }
 
 interface FlightOffer {
@@ -107,29 +122,30 @@ interface FlightOffer {
 const DEFAULT_AIRLINE_LOGO = '/default-logo.png';
 
 const formatDate = (dateString: string) => {
-  // Create date object while preserving the date exactly as provided
+  // Parse the date string and preserve the exact time
   const date = new Date(dateString);
-  const utcDate = new Date(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
-    date.getUTCHours(),
-    date.getUTCMinutes()
-  );
+  
+  // Format time
+  const time = date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC'  // Use UTC to prevent timezone shifts
+  });
+
+  // Format date
+  const dateFormatted = date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC'  // Use UTC to prevent timezone shifts
+  });
 
   return {
-    time: utcDate.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }),
-    date: utcDate.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    }),
-  }
-}
+    time,
+    date: dateFormatted
+  };
+};
 
 const formatPrice = (amount: number) => {
   return new Intl.NumberFormat("en-US", {
@@ -191,6 +207,15 @@ const getStopsDisplay = (segments: FlightSegment[]) => {
   };
 };
 
+const formatBrandName = (brand: UpSellBrand) => {
+  const { brandName, price } = brand.upSellBrand;
+  return {
+    name: brandName,
+    price: price.totalPayable.total,
+    currency: price.totalPayable.currency
+  };
+};
+
 const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
   if (!offer?.OutboundSegments?.length) {
     return (
@@ -217,6 +242,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
   const isMultiSegment = outboundSegments.length > 1 || returnSegments.length > 1;
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<UpSellBrand | null>(null);
+  const [selectedFare, setSelectedFare] = useState<string>("");
 
   const getLayoverDuration = (currentSegment: FlightSegment, nextSegment: FlightSegment) => {
     const currentArrival = new Date(currentSegment.Arrival.ScheduledTime)
@@ -277,12 +303,19 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
 
   useEffect(() => {
     if (offer.UpSellBrandList?.length) {
-      const lowestPriceOption = offer.UpSellBrandList.reduce((prev, curr) => {
-        return prev.upSellBrand.price.totalPayable.total < curr.upSellBrand.price.totalPayable.total ? prev : curr;
-      });
-      setSelectedBrand(lowestPriceOption);
+      const defaultBrand = offer.UpSellBrandList[0];
+      setSelectedBrand(defaultBrand);
+      setSelectedFare(defaultBrand.upSellBrand.brandName);
     }
   }, [offer.UpSellBrandList]);
+
+  const handleBrandSelect = (value: string) => {
+    const brand = offer.UpSellBrandList?.find(
+      b => b.upSellBrand.brandName === value
+    ) || null;
+    setSelectedBrand(brand);
+    setSelectedFare(value);
+  };
 
   if (!outboundRoute) {
     return (
@@ -418,68 +451,157 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
 
           <div className="w-full lg:w-80 mt-6 lg:mt-0 lg:border-l lg:pl-6">
             {/* Fare Selection Dropdown */}
-            <Select 
-              value={selectedBrand?.upSellBrand.offerId}
-              onValueChange={(value) => {
-                const brand = offer.UpSellBrandList?.find(
-                  b => b.upSellBrand.offerId === value
-                );
-                if (brand) {
-                  setSelectedBrand(brand);
-                }
-              }}
-            >
-              <SelectTrigger className="w-full">
+            <Select value={selectedFare} onValueChange={handleBrandSelect}>
+              <SelectTrigger className="w-full h-auto py-3">
                 <SelectValue>
-                  {selectedBrand?.upSellBrand.brandName || "Select fare type"}
+                  {selectedBrand && (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex justify-between items-center w-full">
+                        <span className="font-medium">{selectedBrand.upSellBrand.brandName}</span>
+                        <span className="font-medium">
+                          {selectedBrand.upSellBrand.price.totalPayable.currency} {formatPrice(selectedBrand.upSellBrand.price.totalPayable.total)}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 text-sm text-muted-foreground">
+                        <span>{selectedBrand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.checkIn[0]?.allowance} Check-in</span>
+                        {selectedBrand.upSellBrand.meal && <span>• Meal</span>}
+                      </div>
+                    </div>
+                  )}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent 
-                className="bg-background border shadow-md z-50 relative"
+                className="w-[var(--radix-select-trigger-width)] bg-white dark:bg-gray-950 border rounded-md shadow-lg"
                 position="popper"
-                sideOffset={4}
+                sideOffset={5}
               >
-                <div className="max-h-[300px] overflow-auto">
-                  {offer.UpSellBrandList?.map((brand) => (
-                    <SelectItem 
-                      key={brand.upSellBrand.offerId} 
-                      value={brand.upSellBrand.offerId}
-                      className="focus:bg-accent hover:bg-accent/50 cursor-pointer"
-                    >
-                      {brand.upSellBrand.brandName}
-                    </SelectItem>
-                  ))}
-                </div>
+                {offer.UpSellBrandList?.map((brand) => (
+                  <SelectItem 
+                    key={brand.upSellBrand.offerId} 
+                    value={brand.upSellBrand.brandName}
+                    className="py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 border-b last:border-b-0 focus:bg-gray-100 dark:focus:bg-gray-900"
+                  >
+                    <div className="flex flex-col gap-2">
+                      {/* Header: Brand Name and Price */}
+                      <div className="flex justify-between items-center w-full">
+                        <span className="font-semibold">{brand.upSellBrand.brandName}</span>
+                        <span className="font-semibold">
+                          {brand.upSellBrand.price.totalPayable.currency} {formatPrice(brand.upSellBrand.price.totalPayable.total)}
+                        </span>
+                      </div>
+
+                      {/* Features List */}
+                      <div className="space-y-1.5 text-sm text-muted-foreground">
+                        {/* Baggage */}
+                        <div className="flex items-center gap-2">
+                          <BaggageClaim className="w-4 h-4" />
+                          <span>Check-in: {brand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.checkIn[0]?.allowance}</span>
+                        </div>
+
+                        {/* Meal */}
+                        {brand.upSellBrand.meal && (
+                          <div className="flex items-center gap-2">
+                            <span>✓ Meal Included</span>
+                          </div>
+                        )}
+
+                        {/* Seat */}
+                        {brand.upSellBrand.seat && (
+                          <div className="flex items-center gap-2">
+                            <span>{brand.upSellBrand.seat}</span>
+                          </div>
+                        )}
+
+                        {/* Exchange/Refund */}
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          <span className={`px-2 py-0.5 rounded ${brand.upSellBrand.exchangeAllowed ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>
+                            {brand.upSellBrand.exchangeAllowed ? "Exchangeable" : "Non-Exchangeable"}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded ${brand.upSellBrand.refundAllowed ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>
+                            {brand.upSellBrand.refundAllowed ? "Refundable" : "Non-Refundable"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
             {/* Features Box */}
             {selectedBrand && (
-              <div className="mt-4">
-                <div className="p-4 rounded-lg border bg-muted/30">
-                  <h4 className="font-medium mb-3">{selectedBrand.upSellBrand.brandName} Features</h4>
-                  
-                  {/* Check-in Baggage */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <BaggageClaim className="w-4 h-4 text-primary" />
-                    <span className="text-sm">
-                      Check-In: {selectedBrand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.checkIn[0]?.allowance}
-                    </span>
-                  </div>
-                  
-                  {/* Cabin Baggage */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <Luggage className="w-4 h-4 text-primary" />
-                    <span className="text-sm">
-                      Cabin: {selectedBrand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.cabin[0]?.allowance}
-                    </span>
-                  </div>
+              <div className="mt-4 p-4 rounded-lg border bg-muted/30">
+                <h4 className="font-medium mb-4">{selectedFare} Features</h4>
+                <div className="space-y-3">
+                  {/* Seats Remaining */}
+                  {offer.SeatsRemaining > 0 && (
+                    <div className="flex items-center gap-2 text-orange-600">
+                      <span className="text-sm font-medium">
+                        {offer.SeatsRemaining} {offer.SeatsRemaining === 1 ? 'seat' : 'seats'} remaining
+                      </span>
+                    </div>
+                  )}
 
-                  {/* Refundable Status */}
-                  {selectedBrand.upSellBrand.refundable && (
-                    <div className="text-sm text-green-500 flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                      Refundable
+                  {/* Baggage */}
+                  {selectedBrand.upSellBrand.baggageAllowanceList?.[0]?.baggageAllowance.checkIn?.[0]?.allowance && (
+                    <div className="flex items-center gap-2">
+                      <BaggageClaim className="w-4 h-4" />
+                      <span className="text-sm">
+                        Check-In: {selectedBrand.upSellBrand.baggageAllowanceList[0].baggageAllowance.checkIn[0].allowance}
+                      </span>
+                    </div>
+                  )}
+
+                  {selectedBrand.upSellBrand.baggageAllowanceList?.[0]?.baggageAllowance.cabin?.[0]?.allowance && (
+                    <div className="flex items-center gap-2">
+                      <Luggage className="w-4 h-4" />
+                      <span className="text-sm">
+                        Cabin: {selectedBrand.upSellBrand.baggageAllowanceList[0].baggageAllowance.cabin[0].allowance}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Meal */}
+                  {selectedBrand.upSellBrand.meal !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">
+                        Meal: {selectedBrand.upSellBrand.meal ? "Included" : "Not Included"}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Seat */}
+                  {selectedBrand.upSellBrand.seat && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">
+                        Seat: {selectedBrand.upSellBrand.seat}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Miles */}
+                  {selectedBrand.upSellBrand.miles && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">
+                        Miles: {selectedBrand.upSellBrand.miles}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Exchange & Refund */}
+                  {selectedBrand.upSellBrand.exchangeAllowed !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">
+                        {selectedBrand.upSellBrand.exchangeAllowed ? "Exchangeable" : "Non-Exchangeable"}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {selectedBrand.upSellBrand.refundAllowed !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">
+                        {selectedBrand.upSellBrand.refundAllowed ? "Refundable" : "Non-Refundable"}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -490,15 +612,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
             <div className="mt-6">
               <div className="text-right mb-4">
                 <div className="text-3xl font-bold">
-                  {selectedBrand ? (
-                    <>
-                      {selectedBrand.upSellBrand.price.totalPayable.currency} {formatPrice(selectedBrand.upSellBrand.price.totalPayable.total)}
-                    </>
-                  ) : (
-                    <>
-                      {getPriceDisplay(offer.Pricing).currency} {formatPrice(getPriceDisplay(offer.Pricing).total)}
-                    </>
-                  )}
+                  {selectedBrand?.upSellBrand.price.totalPayable.currency || "BDT"} {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || 0)}
                 </div>
                 <div className="text-sm text-muted-foreground">Price per adult</div>
               </div>
@@ -681,21 +795,102 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
 
             {activeTab === "fare-summary" && (
               <div className="mt-6">
-                <div className="bg-muted/30 p-6 rounded-lg border space-y-4">
-                  <div className="flex justify-between items-center pb-4 border-b">
-                    <span className="font-medium">Fare Breakdown</span>
-                    <span className="text-sm text-muted-foreground">Price per adult</span>
+                <div className="bg-muted/30 p-6 rounded-lg border space-y-6">
+                  {/* Add Seats Remaining */}
+                  {offer.SeatsRemaining > 0 && (
+                    <div className="text-sm text-orange-600 font-medium">
+                      {offer.SeatsRemaining} {offer.SeatsRemaining === 1 ? 'seat' : 'seats'} remaining
+                    </div>
+                  )}
+                  
+                  {/* Price Breakdown */}
+                  <div>
+                    <div className="flex justify-between items-center pb-4 border-b">
+                      <span className="font-medium">Fare Breakdown</span>
+                      <span className="text-sm text-muted-foreground">Price per adult</span>
+                    </div>
+                    <div className="space-y-2 mt-4">
+                      <div className="flex justify-between">
+                        <span>Base Fare</span>
+                        <span className="font-medium">
+                          {selectedBrand?.upSellBrand.price.totalPayable.currency || "BDT"} {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Taxes & Fees</span>
+                        <span>Included</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Base Fare</span>
-                    <span className="font-medium">
-                      {getPriceDisplay(offer.Pricing).currency} {formatPrice(getPriceDisplay(offer.Pricing).total)}
-                    </span>
-                  </div>
+
+                  {/* Fare Features */}
+                  {selectedBrand?.upSellBrand && (
+                    <div className="space-y-4 pt-4 border-t">
+                      <h4 className="font-medium">Fare Features</h4>
+                      
+                      <div className="grid gap-4">
+                        {selectedBrand.upSellBrand.rbd && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">RBD</span>
+                            <span className="text-sm font-medium">
+                              {selectedBrand.upSellBrand.rbd}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedBrand.upSellBrand.meal !== undefined && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Meal Service</span>
+                            <span className="text-sm font-medium">
+                              {selectedBrand.upSellBrand.meal ? "Included" : "Not Included"}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedBrand.upSellBrand.seat && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Seat Selection</span>
+                            <span className="text-sm font-medium">
+                              {selectedBrand.upSellBrand.seat}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedBrand.upSellBrand.miles && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Miles</span>
+                            <span className="text-sm font-medium">
+                              {selectedBrand.upSellBrand.miles}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedBrand.upSellBrand.exchangeAllowed !== undefined && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Exchange</span>
+                            <span className="text-sm font-medium">
+                              {selectedBrand.upSellBrand.exchangeAllowed ? "Allowed" : "Not Allowed"}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedBrand.upSellBrand.refundAllowed !== undefined && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Refund</span>
+                            <span className="text-sm font-medium">
+                              {selectedBrand.upSellBrand.refundAllowed ? "Allowed" : "Not Allowed"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Total Price */}
                   <div className="flex justify-between pt-4 border-t">
                     <span className="font-bold">Total</span>
                     <span className="font-bold text-lg">
-                      {getPriceDisplay(offer.Pricing).currency} {formatPrice(getPriceDisplay(offer.Pricing).total)}
+                      {selectedBrand?.upSellBrand.price.totalPayable.currency || "BDT"} {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || 0)}
                     </span>
                   </div>
                 </div>

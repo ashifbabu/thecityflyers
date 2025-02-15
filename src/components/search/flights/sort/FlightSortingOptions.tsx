@@ -22,6 +22,16 @@ const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
   availableAirlines,
   currentSort
 }) => {
+  const handleSortChange = (field: keyof SortOption, value: any) => {
+    // Create new sort options with only the changed field
+    const newOptions: Partial<SortOption> = {
+      [field]: value
+    };
+    
+    // Call the parent's onSortChange with the new options
+    onSortChange(newOptions);
+  };
+
   return (
     <div className="bg-white dark:bg-black p-4 rounded-lg border border-gray-200 dark:border-gray-800 mb-4">
       <div className="flex flex-wrap gap-4">
@@ -32,11 +42,11 @@ const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
           </label>
           <select
             className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-            onChange={(e) => onSortChange({ fare: e.target.value as SortOption['fare'] })}
+            onChange={(e) => handleSortChange('fare', e.target.value as SortOption['fare'])}
             value={currentSort.fare}
           >
             <option value="lowToHigh">Lower to Higher</option>
-            <option value="highToLow">Highest to Lower</option>
+            <option value="highToLow">Higher to Lower</option>
           </select>
         </div>
 
@@ -47,8 +57,8 @@ const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
           </label>
           <select
             className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-            onChange={(e) => onSortChange({ stops: [e.target.value] })}
-            value={currentSort.stops?.[0]}
+            onChange={(e) => handleSortChange('stops', e.target.value ? [e.target.value] : [])}
+            value={currentSort.stops?.[0] || ''}
           >
             <option value="">All Stops</option>
             <option value="0">Non-stop</option>
@@ -65,7 +75,7 @@ const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
           </label>
           <select
             className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-            onChange={(e) => onSortChange({ takeoff: e.target.value as SortOption['takeoff'] })}
+            onChange={(e) => handleSortChange('takeoff', e.target.value as SortOption['takeoff'])}
             value={currentSort.takeoff}
           >
             <option value="earlierToLater">Earlier to Later</option>
@@ -80,7 +90,7 @@ const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
           </label>
           <select
             className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-            onChange={(e) => onSortChange({ airline: [e.target.value] })}
+            onChange={(e) => handleSortChange('airline', e.target.value ? [e.target.value] : [])}
             value={currentSort.airline?.[0]}
           >
             <option value="">All Airlines</option>
@@ -99,7 +109,7 @@ const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
           </label>
           <select
             className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-            onChange={(e) => onSortChange({ layovers: e.target.value as SortOption['layovers'] })}
+            onChange={(e) => handleSortChange('layovers', e.target.value as SortOption['layovers'])}
             value={currentSort.layovers}
           >
             <option value="lowToHigh">Lower to Higher</option>

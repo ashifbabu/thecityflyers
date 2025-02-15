@@ -52,7 +52,10 @@ const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButt
 
   const formatDate = (date?: Date) => {
     if (!date) return undefined;
-    return date.toISOString().split('T')[0];
+    // Create a new date and set to midnight in local timezone
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0); // Set to noon to avoid any timezone edge cases
+    return d.toISOString().slice(0, 10); // Get YYYY-MM-DD
   };
 
   const handleSearch = async () => {

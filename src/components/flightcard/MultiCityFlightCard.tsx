@@ -51,12 +51,46 @@ interface Pricing {
   };
 }
 
+interface UpSellBrand {
+  upSellBrand: {
+    offerId: string;
+    brandName: string;
+    refundable: boolean;
+    price: {
+      totalPayable: {
+        total: number;
+        currency: string;
+      };
+    };
+    baggageAllowanceList: Array<{
+      baggageAllowance: {
+        checkIn: Array<{
+          paxType: string;
+          allowance: string;
+        }>;
+        cabin: Array<{
+          paxType: string;
+          allowance: string;
+        }>;
+      };
+    }>;
+    rbd: string;
+    meal: boolean;
+    seat: string;
+    miles: string;
+    refundAllowed: boolean;
+    exchangeAllowed: boolean;
+  };
+}
+
 interface MultiCityOffer {
   OutboundSegments: Segment[]
   InboundSegments?: Segment[]
   Pricing: Pricing
   Refundable: boolean
   ValidatingCarrier: string
+  UpSellBrandList?: UpSellBrand[]
+  SeatsRemaining: number
 }
 
 const formatDate = (dateString: string) => {
@@ -129,9 +163,236 @@ const TripSegment: React.FC<{ segments: Segment[]; tripNumber: number }> = ({ se
   )
 }
 
+const FlightDetailsTab: React.FC<{ segments: Segment[] }> = ({ segments }) => {
+  return (
+    <div className="mt-4 space-y-6">
+      {segments.map((segment, index) => (
+        <div key={index} className="border-b last:border-b-0 pb-4 last:pb-0">
+          <div className="flex items-center gap-3 mb-3">
+            <img
+              src={segment.Logo}
+              alt={segment.MarketingCarrier.carrierName}
+              className="w-8 h-8"
+            />
+            <div>
+              <div className="font-medium">{segment.MarketingCarrier.carrierName}</div>
+              <div className="text-sm text-muted-foreground">Flight {segment.FlightNumber}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <div className="text-sm text-muted-foreground">Departure</div>
+              <div className="font-medium">{formatDate(segment.Departure.ScheduledTime).time}</div>
+              <div className="text-sm">{formatDate(segment.Departure.ScheduledTime).date}</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {segment.Departure.AirportName} ({segment.Departure.IATACode})
+                {segment.Departure.Terminal && ` • Terminal ${segment.Departure.Terminal}`}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm text-muted-foreground">Arrival</div>
+              <div className="font-medium">{formatDate(segment.Arrival.ScheduledTime).time}</div>
+              <div className="text-sm">{formatDate(segment.Arrival.ScheduledTime).date}</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {segment.Arrival.AirportName} ({segment.Arrival.IATACode})
+                {segment.Arrival.Terminal && ` • Terminal ${segment.Arrival.Terminal}`}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm text-muted-foreground">Duration</div>
+              <div className="font-medium">{segment.Duration}</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {segment.CabinType} Class
+              </div>
+              {segment.SeatsRemaining && (
+                <div className="text-sm text-orange-600 mt-1">
+                  {segment.SeatsRemaining} seats left
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="text-sm text-muted-foreground">Aircraft</div>
+              <div className="font-medium">
+                Operated by {segment.OperatingCarrier.carrierName}
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Flight {segment.OperatingCarrier.marketingCarrierFlightNumber}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const FareSummaryTab: React.FC<{ 
+  pricing: Pricing; 
+  selectedBrand: UpSellBrand | null;
+  seatsRemaining: number;
+}> = ({ pricing, selectedBrand, seatsRemaining }) => {
+  return (
+    <div className="mt-4">
+      <div className="space-y-6">
+        {/* Add Seats Remaining */}
+        {seatsRemaining > 0 && (
+          <div className="text-sm text-orange-600 font-medium">
+            {seatsRemaining} {seatsRemaining === 1 ? 'seat' : 'seats'} remaining
+          </div>
+        )}
+
+        {/* Price Breakdown */}
+        <div className="border-b pb-4">
+          <div className="text-sm font-medium mb-4">Fare Breakdown</div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Base Fare</span>
+              <span>
+                {selectedBrand?.upSellBrand.price.totalPayable.currency || "BDT"}{" "}
+                {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || 0)}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Taxes & Fees</span>
+              <span>Included</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Fare Features */}
+        {selectedBrand?.upSellBrand && (
+          <div className="space-y-4">
+            <h4 className="font-medium">Fare Features</h4>
+            
+            <div className="grid gap-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">RBD</span>
+                <span className="text-sm font-medium">
+                  {selectedBrand.upSellBrand.rbd}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Meal Service</span>
+                <span className="text-sm font-medium">
+                  {selectedBrand.upSellBrand.meal ? "Included" : "Not Included"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Seat Selection</span>
+                <span className="text-sm font-medium">
+                  {selectedBrand.upSellBrand.seat}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Miles</span>
+                <span className="text-sm font-medium">
+                  {selectedBrand.upSellBrand.miles}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Exchange</span>
+                <span className="text-sm font-medium">
+                  {selectedBrand.upSellBrand.exchangeAllowed ? "Allowed" : "Not Allowed"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Refund</span>
+                <span className="text-sm font-medium">
+                  {selectedBrand.upSellBrand.refundAllowed ? "Allowed" : "Not Allowed"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Total Price */}
+        <div className="pt-4 border-t">
+          <div className="flex justify-between font-medium">
+            <span>Total Price</span>
+            <span className="text-lg">
+              {selectedBrand?.upSellBrand.price.totalPayable.currency || "BDT"}{" "}
+              {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || 0)}
+            </span>
+          </div>
+          <div className="text-sm text-muted-foreground mt-1">
+            Price per adult • Including all taxes and fees
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BaggageTab: React.FC<{ segments: Segment[] }> = ({ segments }) => {
+  return (
+    <div className="mt-4 space-y-6">
+      {segments.map((segment, index) => (
+        <div key={index} className="border-b last:border-b-0 pb-4 last:pb-0">
+          <div className="text-sm font-medium mb-3">
+            {segment.Departure.CityName} ({segment.Departure.IATACode}) → {segment.Arrival.CityName} ({segment.Arrival.IATACode})
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm text-muted-foreground mb-2">Cabin Baggage</div>
+              <div className="flex items-center gap-2">
+                <Luggage className="w-4 h-4" />
+                <span className="text-sm">7 KG</span>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm text-muted-foreground mb-2">Check-in Baggage</div>
+              <div className="flex items-center gap-2">
+                <BaggageClaim className="w-4 h-4" />
+                <span className="text-sm">20 KG</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const formatPrice = (amount: number) => {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+const formatBrandName = (brand: UpSellBrand) => {
+  const { brandName, price } = brand.upSellBrand;
+  return {
+    name: brandName,
+    price: price.totalPayable.total,
+    currency: price.totalPayable.currency
+  };
+};
+
 const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ multiCityOffer }) => {
-  const [selectedFare, setSelectedFare] = useState("ECONOMY STANDARD")
-  const [activeTab, setActiveTab] = useState<"flight-details" | "fare-summary" | "baggage" | null>(null)
+  const [selectedFare, setSelectedFare] = useState<string>("ECONOMY STANDARD");
+  const [selectedBrand, setSelectedBrand] = useState<UpSellBrand | null>(null);
+  const [activeTab, setActiveTab] = useState<"flight-details" | "fare-summary" | "baggage" | null>(null);
+
+  // Add this function to handle brand selection
+  const handleBrandSelect = (value: string) => {
+    setSelectedFare(value);
+    const brand = multiCityOffer.UpSellBrandList?.find(
+      b => b.upSellBrand.brandName === value
+    ) || null;
+    setSelectedBrand(brand);
+  };
 
   // Combine outbound and inbound segments into trips
   const allSegments = [
@@ -162,6 +423,26 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
       currency,
       total: outboundTotal + inboundTotal
     };
+  };
+
+  // Add this before the return statement to render the active tab content
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "flight-details":
+        return <FlightDetailsTab segments={allSegments} />;
+      case "fare-summary":
+        return (
+          <FareSummaryTab 
+            pricing={multiCityOffer.Pricing} 
+            selectedBrand={selectedBrand} 
+            seatsRemaining={multiCityOffer.SeatsRemaining}
+          />
+        );
+      case "baggage":
+        return <BaggageTab segments={allSegments} />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -205,13 +486,44 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
           {/* Right Side Panel */}
           <div className="mt-6 lg:mt-0 lg:w-80 lg:border-l lg:pl-6">
             {/* Fare Selection */}
-            <Select value={selectedFare} onValueChange={setSelectedFare}>
-              <SelectTrigger className="w-full">
-                <SelectValue>{selectedFare}</SelectValue>
+            <Select value={selectedFare} onValueChange={handleBrandSelect}>
+              <SelectTrigger className="w-full h-auto py-3">
+                <SelectValue>
+                  {selectedBrand && (
+                    <div className="flex justify-between items-center w-full">
+                      <span className="font-medium">{selectedBrand.upSellBrand.brandName}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {selectedBrand.upSellBrand.price.totalPayable.currency} {formatPrice(selectedBrand.upSellBrand.price.totalPayable.total)}
+                      </span>
+                    </div>
+                  )}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ECONOMY STANDARD">ECONOMY STANDARD</SelectItem>
-                <SelectItem value="ECONOMY FLEX">ECONOMY FLEX</SelectItem>
+                {multiCityOffer.UpSellBrandList?.map((brand) => {
+                  const { name, price, currency } = formatBrandName(brand);
+                  return (
+                    <SelectItem 
+                      key={brand.upSellBrand.offerId} 
+                      value={name}
+                      className="py-3"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center w-full">
+                          <span className="font-medium">{name}</span>
+                          <span className="text-sm font-medium">
+                            {currency} {formatPrice(price)}
+                          </span>
+                        </div>
+                        <div className="flex gap-2 text-sm text-muted-foreground">
+                          <span>{brand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.checkIn[0]?.allowance} Check-in</span>
+                          {brand.upSellBrand.meal && <span>• Meal</span>}
+                          {brand.upSellBrand.refundAllowed && <span>• Refundable</span>}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 
@@ -219,28 +531,69 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
             <div className="mt-4 p-4 rounded-lg border bg-muted/30">
               <h4 className="font-medium mb-4">{selectedFare} Features</h4>
               <div className="space-y-3">
+                {/* Add Seats Remaining at the top */}
+                {multiCityOffer.SeatsRemaining > 0 && (
+                  <div className="flex items-center gap-2 text-orange-600">
+                    <span className="text-sm font-medium">
+                      {multiCityOffer.SeatsRemaining} {multiCityOffer.SeatsRemaining === 1 ? 'seat' : 'seats'} remaining
+                    </span>
+                  </div>
+                )}
+
+                {/* Baggage */}
                 <div className="flex items-center gap-2">
                   <BaggageClaim className="w-4 h-4" />
-                  <span className="text-sm">Check-In: 2P</span>
+                  <span className="text-sm">
+                    Check-In: {selectedBrand?.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.checkIn[0]?.allowance || "N/A"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Luggage className="w-4 h-4" />
-                  <span className="text-sm">Cabin: SB</span>
+                  <span className="text-sm">
+                    Cabin: {selectedBrand?.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.cabin[0]?.allowance || "N/A"}
+                  </span>
                 </div>
-                {multiCityOffer.Refundable && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span className="text-sm text-green-500">Refundable</span>
-                  </div>
-                )}
+
+                {/* Meal */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    Meal: {selectedBrand?.upSellBrand.meal ? "Included" : "Not Included"}
+                  </span>
+                </div>
+
+                {/* Seat */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    Seat: {selectedBrand?.upSellBrand.seat}
+                  </span>
+                </div>
+
+                {/* Miles */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    Miles: {selectedBrand?.upSellBrand.miles}
+                  </span>
+                </div>
+
+                {/* Exchange & Refund */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {selectedBrand?.upSellBrand.exchangeAllowed ? "Exchangeable" : "Non-Exchangeable"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {selectedBrand?.upSellBrand.refundAllowed ? "Refundable" : "Non-Refundable"}
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Price and Action */}
             <div className="mt-6 text-right">
               <div className="text-3xl font-bold">
-                {getPriceBreakdown().currency}{" "}
-                {getPriceBreakdown().total.toLocaleString()}
+                {selectedBrand?.upSellBrand.price.totalPayable.currency || "BDT"}{" "}
+                {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || 0)}
               </div>
               <div className="text-sm text-muted-foreground mb-4">Price per adult</div>
               <Button className="w-full">
@@ -275,6 +628,8 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
               Baggage
             </Button>
           </div>
+          {/* Add the tab content */}
+          {renderTabContent()}
         </div>
       </CardContent>
     </Card>

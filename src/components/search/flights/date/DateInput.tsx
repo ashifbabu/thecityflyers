@@ -45,8 +45,13 @@ const DateInput: React.FC<DateInputProps> = ({
   const handleDayClick: SelectSingleEventHandler = (day) => {
     if (!day) return;
     if (isBefore(day, minSelectableDate)) return;
+    
+    // Create a new date and set to noon to avoid timezone issues
+    const selectedDay = new Date(day);
+    selectedDay.setHours(12, 0, 0, 0);
+    
     setShowCalendar(false);
-    onDateSelect?.(type, day);
+    onDateSelect?.(type, selectedDay);
   };
 
   const disabledDays = {
@@ -54,7 +59,7 @@ const DateInput: React.FC<DateInputProps> = ({
   };
 
   const formattedDate = selectedDate
-    ? selectedDate.toLocaleDateString('en-US', {
+    ? new Date(selectedDate).toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -62,7 +67,9 @@ const DateInput: React.FC<DateInputProps> = ({
     : value;
 
   const weekday = selectedDate
-    ? selectedDate.toLocaleDateString('en-US', { weekday: 'long' })
+    ? new Date(selectedDate).toLocaleDateString('en-US', { 
+        weekday: 'long',
+      })
     : subValue;
 
   return (

@@ -287,32 +287,70 @@ const FlightResultsPage = () => {
         }
       }
 
+      // Get airline information
+      const airline = flight.OutboundSegments?.[0]?.MarketingCarrier?.carrierName || '';
+
       return {
         ...flight,
         calculatedFare,
         departureTime,
         numberOfStops,
-        layoverDuration
+        layoverDuration,
+        airline
       };
     });
 
-    // Sort flights based on multiple criteria
-    return flightsWithDetails.sort((a, b) => {
-      // Primary sort: Fare
-      const fareDiff = options.fare === 'highToLow'
-        ? b.calculatedFare - a.calculatedFare
-        : a.calculatedFare - b.calculatedFare;
+    let filteredFlights = [...flightsWithDetails];
+
+    // Apply filters
+    if (options.stops?.length) {
+      filteredFlights = filteredFlights.filter(flight => {
+        const stopValue = options.stops?.[0];
+        if (stopValue === '0') return flight.numberOfStops === 0;
+        if (stopValue === '1') return flight.numberOfStops === 1;
+        if (stopValue === '2') return flight.numberOfStops === 2;
+        if (stopValue === '2+') return flight.numberOfStops > 2;
+        return true;
+      });
+    }
+
+    if (options.airline?.length) {
+      filteredFlights = filteredFlights.filter(flight => 
+        options.airline?.includes(flight.airline)
+      );
+    }
+
+    // Sort flights based on active sorting criteria
+    return filteredFlights.sort((a, b) => {
+      // Primary sort: Fare (always applied)
+      const fareDiff = (options.fare === 'highToLow' ? -1 : 1) * 
+        (a.calculatedFare - b.calculatedFare);
       if (fareDiff !== 0) return fareDiff;
 
       // Secondary sort: Departure time
-      const timeDiff = a.departureTime - b.departureTime;
-      if (timeDiff !== 0) return timeDiff;
+      if (options.takeoff) {
+        const timeDiff = options.takeoff === 'laterToEarlier' ? 
+          b.departureTime - a.departureTime :
+          a.departureTime - b.departureTime;
+        if (timeDiff !== 0) return timeDiff;
+      } else {
+        // Default to earlier departure if no takeoff preference
+        const timeDiff = a.departureTime - b.departureTime;
+        if (timeDiff !== 0) return timeDiff;
+      }
 
-      // Tertiary sort: Number of stops
+      // Tertiary sort: Number of stops (prefer fewer stops by default)
       const stopsDiff = a.numberOfStops - b.numberOfStops;
       if (stopsDiff !== 0) return stopsDiff;
 
       // Final sort: Layover duration
+      if (options.layovers) {
+        return options.layovers === 'highToLow' ?
+          b.layoverDuration - a.layoverDuration :
+          a.layoverDuration - b.layoverDuration;
+      }
+      
+      // Default to shorter layovers
       return a.layoverDuration - b.layoverDuration;
     });
   };
