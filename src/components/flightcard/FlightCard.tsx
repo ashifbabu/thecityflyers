@@ -216,6 +216,9 @@ const formatBrandName = (brand: UpSellBrand) => {
   };
 };
 
+// Add this type near the top of the file
+type ActiveTab = 'flight-details' | 'fare-summary' | 'baggage' | null;
+
 const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
   if (!offer?.OutboundSegments?.length) {
     return (
@@ -240,7 +243,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
   const firstReturnSegment = returnSegments?.[0];
   const lastReturnSegment = returnSegments?.[returnSegments.length - 1];
   const isMultiSegment = outboundSegments.length > 1 || returnSegments.length > 1;
-  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>(null);
   const [selectedBrand, setSelectedBrand] = useState<UpSellBrand | null>(null);
   const [selectedFare, setSelectedFare] = useState<string>("");
 
@@ -330,8 +333,8 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-4 sm:p-6">
+    <Card className="overflow-hidden bg-white dark:bg-black/95 shadow-lg hover:shadow-xl transition-all duration-300">
+      <CardContent className="p-6">
         <div className="flex flex-col lg:flex-row lg:gap-6">
           <div className="flex-grow">
             <div className="flex items-center justify-between">
@@ -356,81 +359,40 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                 </div>
               </div>
               {offer.Refundable && (
-                <span className="text-green-500 text-sm font-medium bg-green-50 px-2 py-1 rounded">Refundable</span>
+                <span className="text-black dark:text-white text-sm font-medium bg-black/5 dark:bg-white/10 px-3 py-1 rounded-full">
+                  Refundable
+                </span>
               )}
             </div>
 
             {/* Outbound Flight */}
             <div className="mt-6">
-              <div className="text-sm font-medium text-muted-foreground mb-2">Departure</div>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-muted/30 p-4 rounded-lg border">
-                <div>
-                  <div className="text-lg font-bold">
-                    {outboundRoute.origin.city} ({outboundRoute.origin.code})
-                  </div>
-                  <div className="text-sm text-muted-foreground mb-1">{outboundRoute.origin.airport}</div>
-                  <div className="text-3xl font-bold">{formatDate(outboundRoute.origin.time).time}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {formatDate(outboundRoute.origin.time).date}
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-center my-4 sm:my-0">
-                  <div className="text-sm font-medium">{getTotalDuration(outboundSegments)}</div>
-                  <div className="w-32 sm:w-48 h-px bg-primary/30 relative my-2">
-                    <Plane className="w-4 h-4 absolute -top-2 -right-2 text-primary" />
-                  </div>
-                  {outboundSegments.length > 1 && (
-                    <div className="text-sm">
-                      <div className="text-primary">
-                        {outboundSegments.length - 1} {outboundSegments.length - 1 === 1 ? "Stop" : "Stops"}
-                      </div>
-                      <div className="text-xs text-muted-foreground text-center">
-                        {getStopsDisplay(outboundSegments)?.text}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-right">
-                  <div className="text-lg font-bold">
-                    {outboundRoute.destination.city} ({outboundRoute.destination.code})
-                  </div>
-                  <div className="text-sm text-muted-foreground mb-1">{outboundRoute.destination.airport}</div>
-                  <div className="text-3xl font-bold">{formatDate(outboundRoute.destination.time).time}</div>
-                  <div className="text-sm text-muted-foreground">{formatDate(outboundRoute.destination.time).date}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Return Flight */}
-            {returnSegments && returnSegments.length > 0 && returnRoute && (
-              <div className="mt-4">
-                <div className="text-sm font-medium text-muted-foreground mb-2">Return</div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-muted/30 p-4 rounded-lg border">
+              <div className="text-sm text-black/60 dark:text-white/60 mb-2">Departure</div>
+              <div className="bg-black/5 dark:bg-white/5 p-6 rounded-xl">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
                   <div>
                     <div className="text-lg font-bold">
-                      {returnRoute!.origin.city} ({returnRoute!.origin.code})
+                      {outboundRoute.origin.city} ({outboundRoute.origin.code})
                     </div>
-                    <div className="text-sm text-muted-foreground mb-1">{returnRoute!.origin.airport}</div>
-                    <div className="text-3xl font-bold">{formatDate(returnRoute!.origin.time).time}</div>
+                    <div className="text-sm text-muted-foreground mb-1">{outboundRoute.origin.airport}</div>
+                    <div className="text-3xl font-bold">{formatDate(outboundRoute.origin.time).time}</div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(returnRoute!.origin.time).date}
+                      {formatDate(outboundRoute.origin.time).date}
                     </div>
                   </div>
 
                   <div className="flex flex-col items-center my-4 sm:my-0">
-                    <div className="text-sm font-medium">{getTotalDuration(returnSegments)}</div>
+                    <div className="text-sm font-medium">{getTotalDuration(outboundSegments)}</div>
                     <div className="w-32 sm:w-48 h-px bg-primary/30 relative my-2">
                       <Plane className="w-4 h-4 absolute -top-2 -right-2 text-primary" />
                     </div>
-                    {returnSegments.length > 1 && (
+                    {outboundSegments.length > 1 && (
                       <div className="text-sm">
                         <div className="text-primary">
-                          {returnSegments.length - 1} {returnSegments.length - 1 === 1 ? "Stop" : "Stops"}
+                          {outboundSegments.length - 1} {outboundSegments.length - 1 === 1 ? "Stop" : "Stops"}
                         </div>
                         <div className="text-xs text-muted-foreground text-center">
-                          {returnSegments.slice(0, -1).map(seg => seg.Arrival.IATACode).join(", ")}
+                          {getStopsDisplay(outboundSegments)?.text}
                         </div>
                       </div>
                     )}
@@ -438,11 +400,58 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
 
                   <div className="text-right">
                     <div className="text-lg font-bold">
-                      {returnRoute!.destination.city} ({returnRoute!.destination.code})
+                      {outboundRoute.destination.city} ({outboundRoute.destination.code})
                     </div>
-                    <div className="text-sm text-muted-foreground mb-1">{returnRoute!.destination.airport}</div>
-                    <div className="text-3xl font-bold">{formatDate(returnRoute!.destination.time).time}</div>
-                    <div className="text-sm text-muted-foreground">{formatDate(returnRoute!.destination.time).date}</div>
+                    <div className="text-sm text-muted-foreground mb-1">{outboundRoute.destination.airport}</div>
+                    <div className="text-3xl font-bold">{formatDate(outboundRoute.destination.time).time}</div>
+                    <div className="text-sm text-muted-foreground">{formatDate(outboundRoute.destination.time).date}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Return Flight */}
+            {returnSegments && returnSegments.length > 0 && returnRoute && (
+              <div className="mt-4">
+                <div className="text-sm text-black/60 dark:text-white/60 mb-2">Return</div>
+                <div className="bg-black/5 dark:bg-white/5 p-6 rounded-xl">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <div>
+                      <div className="text-lg font-bold">
+                        {returnRoute!.origin.city} ({returnRoute!.origin.code})
+                      </div>
+                      <div className="text-sm text-muted-foreground mb-1">{returnRoute!.origin.airport}</div>
+                      <div className="text-3xl font-bold">{formatDate(returnRoute!.origin.time).time}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatDate(returnRoute!.origin.time).date}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center my-4 sm:my-0">
+                      <div className="text-sm font-medium">{getTotalDuration(returnSegments)}</div>
+                      <div className="w-32 sm:w-48 h-px bg-primary/30 relative my-2">
+                        <Plane className="w-4 h-4 absolute -top-2 -right-2 text-primary" />
+                      </div>
+                      {returnSegments.length > 1 && (
+                        <div className="text-sm">
+                          <div className="text-primary">
+                            {returnSegments.length - 1} {returnSegments.length - 1 === 1 ? "Stop" : "Stops"}
+                          </div>
+                          <div className="text-xs text-muted-foreground text-center">
+                            {returnSegments.slice(0, -1).map(seg => seg.Arrival.IATACode).join(", ")}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-lg font-bold">
+                        {returnRoute!.destination.city} ({returnRoute!.destination.code})
+                      </div>
+                      <div className="text-sm text-muted-foreground mb-1">{returnRoute!.destination.airport}</div>
+                      <div className="text-3xl font-bold">{formatDate(returnRoute!.destination.time).time}</div>
+                      <div className="text-sm text-muted-foreground">{formatDate(returnRoute!.destination.time).date}</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -450,90 +459,92 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
           </div>
 
           <div className="w-full lg:w-80 mt-6 lg:mt-0 lg:border-l lg:pl-6">
-            {/* Fare Selection Dropdown */}
-            <Select value={selectedFare} onValueChange={handleBrandSelect}>
-              <SelectTrigger className="w-full h-auto py-3">
-                <SelectValue>
-                  {selectedBrand && (
-                    <div className="flex flex-col gap-1">
-                      <div className="flex justify-between items-center w-full">
-                        <span className="font-medium">{selectedBrand.upSellBrand.brandName}</span>
-                        <span className="font-medium">
-                          {selectedBrand.upSellBrand.price.totalPayable.currency} {formatPrice(selectedBrand.upSellBrand.price.totalPayable.total)}
-                        </span>
-                      </div>
-                      <div className="flex gap-2 text-sm text-muted-foreground">
-                        <span>{selectedBrand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.checkIn[0]?.allowance} Check-in</span>
-                        {selectedBrand.upSellBrand.meal && <span>• Meal</span>}
-                      </div>
-                    </div>
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent 
-                className="w-[var(--radix-select-trigger-width)] bg-white dark:bg-gray-950 border rounded-md shadow-lg"
-                position="popper"
-                sideOffset={5}
-              >
-                {offer.UpSellBrandList?.map((brand) => (
-                  <SelectItem 
-                    key={brand.upSellBrand.offerId} 
-                    value={brand.upSellBrand.brandName}
-                    className="py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 border-b last:border-b-0 focus:bg-gray-100 dark:focus:bg-gray-900"
-                  >
-                    <div className="flex flex-col gap-2">
-                      {/* Header: Brand Name and Price */}
-                      <div className="flex justify-between items-center w-full">
-                        <span className="font-semibold">{brand.upSellBrand.brandName}</span>
-                        <span className="font-semibold">
-                          {brand.upSellBrand.price.totalPayable.currency} {formatPrice(brand.upSellBrand.price.totalPayable.total)}
-                        </span>
-                      </div>
-
-                      {/* Features List */}
-                      <div className="space-y-1.5 text-sm text-muted-foreground">
-                        {/* Baggage */}
-                        <div className="flex items-center gap-2">
-                          <BaggageClaim className="w-4 h-4" />
-                          <span>Check-in: {brand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.checkIn[0]?.allowance}</span>
-                        </div>
-
-                        {/* Meal */}
-                        {brand.upSellBrand.meal && (
-                          <div className="flex items-center gap-2">
-                            <span>✓ Meal Included</span>
-                          </div>
-                        )}
-
-                        {/* Seat */}
-                        {brand.upSellBrand.seat && (
-                          <div className="flex items-center gap-2">
-                            <span>{brand.upSellBrand.seat}</span>
-                          </div>
-                        )}
-
-                        {/* Exchange/Refund */}
-                        <div className="flex flex-wrap gap-x-3 gap-y-1">
-                          <span className={`px-2 py-0.5 rounded ${brand.upSellBrand.exchangeAllowed ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>
-                            {brand.upSellBrand.exchangeAllowed ? "Exchangeable" : "Non-Exchangeable"}
-                          </span>
-                          <span className={`px-2 py-0.5 rounded ${brand.upSellBrand.refundAllowed ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>
-                            {brand.upSellBrand.refundAllowed ? "Refundable" : "Non-Refundable"}
+            {/* Only show fare selection if UpSellBrandList exists */}
+            {offer.UpSellBrandList && offer.UpSellBrandList.length > 0 && (
+              <Select value={selectedFare} onValueChange={handleBrandSelect}>
+                <SelectTrigger className="w-full h-auto py-3">
+                  <SelectValue>
+                    {selectedBrand && (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center w-full">
+                          <span className="font-medium">{selectedBrand.upSellBrand.brandName}</span>
+                          <span className="font-medium">
+                            {selectedBrand.upSellBrand.price.totalPayable.currency} {formatPrice(selectedBrand.upSellBrand.price.totalPayable.total)}
                           </span>
                         </div>
+                        <div className="flex gap-2 text-sm text-muted-foreground">
+                          <span>{selectedBrand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.checkIn[0]?.allowance} Check-in</span>
+                          {selectedBrand.upSellBrand.meal && <span>• Meal</span>}
+                        </div>
                       </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent 
+                  className="w-[var(--radix-select-trigger-width)] bg-white dark:bg-gray-950 border rounded-md shadow-lg"
+                  position="popper"
+                  sideOffset={5}
+                >
+                  {offer.UpSellBrandList?.map((brand) => (
+                    <SelectItem 
+                      key={brand.upSellBrand.offerId} 
+                      value={brand.upSellBrand.brandName}
+                      className="py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-900 border-b last:border-b-0 focus:bg-gray-100 dark:focus:bg-gray-900"
+                    >
+                      <div className="flex flex-col gap-2">
+                        {/* Header: Brand Name and Price */}
+                        <div className="flex justify-between items-center w-full">
+                          <span className="font-semibold">{brand.upSellBrand.brandName}</span>
+                          <span className="font-semibold">
+                            {brand.upSellBrand.price.totalPayable.currency} {formatPrice(brand.upSellBrand.price.totalPayable.total)}
+                          </span>
+                        </div>
 
-            {/* Features Box */}
+                        {/* Features List */}
+                        <div className="space-y-1.5 text-sm text-muted-foreground">
+                          {/* Baggage */}
+                          <div className="flex items-center gap-2">
+                            <BaggageClaim className="w-4 h-4" />
+                            <span>Check-in: {brand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance.checkIn[0]?.allowance}</span>
+                          </div>
+
+                          {/* Meal */}
+                          {brand.upSellBrand.meal && (
+                            <div className="flex items-center gap-2">
+                              <span>✓ Meal Included</span>
+                            </div>
+                          )}
+
+                          {/* Seat */}
+                          {brand.upSellBrand.seat && (
+                            <div className="flex items-center gap-2">
+                              <span>{brand.upSellBrand.seat}</span>
+                            </div>
+                          )}
+
+                          {/* Exchange/Refund */}
+                          <div className="flex flex-wrap gap-x-3 gap-y-1">
+                            <span className={`px-2 py-0.5 rounded ${brand.upSellBrand.exchangeAllowed ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>
+                              {brand.upSellBrand.exchangeAllowed ? "Exchangeable" : "Non-Exchangeable"}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded ${brand.upSellBrand.refundAllowed ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>
+                              {brand.upSellBrand.refundAllowed ? "Refundable" : "Non-Refundable"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Features Box - Only show if selectedBrand exists */}
             {selectedBrand && (
-              <div className="mt-4 p-4 rounded-lg border bg-muted/30">
+              <div className="mt-4 p-4 rounded-xl bg-black/5 dark:bg-white/5 backdrop-blur-sm">
                 <h4 className="font-medium mb-4">{selectedFare} Features</h4>
                 <div className="space-y-3">
-                  {/* Seats Remaining */}
+                  {/* Only show seats remaining if it exists in the API response */}
                   {offer.SeatsRemaining > 0 && (
                     <div className="flex items-center gap-2 text-orange-600">
                       <span className="text-sm font-medium">
@@ -542,7 +553,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                     </div>
                   )}
 
-                  {/* Baggage */}
+                  {/* Only show baggage info if it exists in the API response */}
                   {selectedBrand.upSellBrand.baggageAllowanceList?.[0]?.baggageAllowance.checkIn?.[0]?.allowance && (
                     <div className="flex items-center gap-2">
                       <BaggageClaim className="w-4 h-4" />
@@ -561,7 +572,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                     </div>
                   )}
 
-                  {/* Meal */}
+                  {/* Only show meal info if it exists in the API response */}
                   {selectedBrand.upSellBrand.meal !== undefined && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm">
@@ -570,7 +581,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                     </div>
                   )}
 
-                  {/* Seat */}
+                  {/* Only show seat info if it exists in the API response */}
                   {selectedBrand.upSellBrand.seat && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm">
@@ -579,7 +590,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                     </div>
                   )}
 
-                  {/* Miles */}
+                  {/* Only show miles if it exists in the API response */}
                   {selectedBrand.upSellBrand.miles && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm">
@@ -588,7 +599,7 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                     </div>
                   )}
 
-                  {/* Exchange & Refund */}
+                  {/* Only show exchange/refund info if it exists in the API response */}
                   {selectedBrand.upSellBrand.exchangeAllowed !== undefined && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm">
@@ -614,9 +625,14 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
                 <div className="text-3xl font-bold">
                   {selectedBrand?.upSellBrand.price.totalPayable.currency || "BDT"} {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || 0)}
                 </div>
-                <div className="text-sm text-muted-foreground">Price per adult</div>
+                <div className="text-sm text-black/60 dark:text-white/60">
+                  Price per adult
+                </div>
               </div>
-              <Button size="lg" className="w-full bg-primary hover:bg-primary/90">
+              <Button 
+                size="lg" 
+                className="w-full bg-black hover:bg-black/90 text-white dark:bg-white dark:text-black dark:hover:bg-white/90 font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+              >
                 Select <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -628,8 +644,10 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
             <div className="flex flex-wrap gap-4">
               <button
                 onClick={() => setActiveTab(activeTab === "flight-details" ? null : "flight-details")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
-                  activeTab === "flight-details" ? "bg-primary text-white" : "bg-muted hover:bg-muted/80"
+                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                  activeTab === "flight-details" 
+                    ? "bg-black text-white dark:bg-white dark:text-black shadow-md" 
+                    : "bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10"
                 }`}
               >
                 <Plane className="h-4 w-4" />
@@ -637,8 +655,10 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
               </button>
               <button
                 onClick={() => setActiveTab(activeTab === "fare-summary" ? null : "fare-summary")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
-                  activeTab === "fare-summary" ? "bg-primary text-white" : "bg-muted hover:bg-muted/80"
+                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                  activeTab === "fare-summary" 
+                    ? "bg-black text-white dark:bg-white dark:text-black shadow-md" 
+                    : "bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10"
                 }`}
               >
                 <Receipt className="h-4 w-4" />
@@ -646,8 +666,10 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
               </button>
               <button
                 onClick={() => setActiveTab(activeTab === "baggage" ? null : "baggage")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
-                  activeTab === "baggage" ? "bg-primary text-white" : "bg-muted hover:bg-muted/80"
+                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                  activeTab === "baggage" 
+                    ? "bg-black text-white dark:bg-white dark:text-black shadow-md" 
+                    : "bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10"
                 }`}
               >
                 <Luggage className="h-4 w-4" />
@@ -655,147 +677,84 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
               </button>
             </div>
 
+            {/* Tab Content */}
             {activeTab === "flight-details" && (
-              <div className="mt-6 space-y-6">
-                {/* Outbound Segments */}
-                {outboundSegments.length > 0 && (
-                  <>
-                    <div className="text-sm text-muted-foreground mb-4">Outbound Flight</div>
-                    {outboundSegments.map((segment, index) => (
-                      <div key={index} className="space-y-4">
-                        <div className="flex flex-col bg-muted/30 p-4 rounded-lg border">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <SegmentLogo segment={segment} />
-                              <div>
+              <div className="mt-6 bg-black/5 dark:bg-white/5 p-6 rounded-xl backdrop-blur-sm">
+                <div className="text-sm text-muted-foreground mb-4">Outbound Flight</div>
+                <div className="space-y-6">
+                  {outboundSegments.map((segment, index) => (
+                    <div key={index} className="space-y-4">
+                      <div className="flex flex-col bg-black/5 dark:bg-white/5 p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <SegmentLogo segment={segment} />
+                            <div>
+                              <div className="flex items-center gap-2">
                                 <div className="font-medium">{segment.MarketingCarrier.carrierName}</div>
                                 <div className="text-sm text-muted-foreground">
-                                  Flight {segment.MarketingCarrier.marketingCarrierFlightNumber} · {segment.CabinType} · {offer.SeatsRemaining || segment.SeatsRemaining || 9} Seats Left
+                                  Flight {segment.MarketingCarrier.marketingCarrierFlightNumber}
                                 </div>
                               </div>
+                              <div className="text-sm text-muted-foreground">
+                                {segment.CabinType} • {offer.SeatsRemaining || segment.SeatsRemaining || 9} Seats Left
+                              </div>
                             </div>
-                            <div className="text-sm font-medium">{segment.Duration}</div>
+                          </div>
+                          <div className="text-sm font-medium">{segment.Duration}</div>
+                        </div>
+
+                        <div className="grid sm:grid-cols-3 gap-6">
+                          <div>
+                            <div className="text-lg font-bold">
+                              {segment.Departure.CityName} ({segment.Departure.IATACode})
+                            </div>
+                            <div className="text-2xl font-bold my-1">{formatDate(segment.Departure.ScheduledTime).time}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {formatDate(segment.Departure.ScheduledTime).date}
+                            </div>
+                            <div className="text-sm mt-2">{segment.Departure.AirportName}</div>
+                            <div className="text-sm text-muted-foreground">Terminal {segment.Departure.Terminal || 1}</div>
                           </div>
 
-                          <div className="grid sm:grid-cols-3 gap-6">
-                            <div>
-                              <div className="text-lg font-bold">
-                                {segment.Departure.CityName} ({segment.Departure.IATACode})
-                              </div>
-                              <div className="text-2xl font-bold my-1">{formatDate(segment.Departure.ScheduledTime).time}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {formatDate(segment.Departure.ScheduledTime).date}
-                              </div>
-                              <div className="text-sm mt-2">{segment.Departure.AirportName}</div>
-                              <div className="text-sm text-muted-foreground">Terminal {segment.Departure.Terminal || 1}</div>
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="w-full h-px bg-border relative">
+                              <Plane className="w-4 h-4 absolute -top-2 right-0 text-primary" />
                             </div>
+                          </div>
 
-                            <div className="flex flex-col items-center justify-center">
-                              <div className="w-full h-px bg-border relative">
-                                <Plane className="w-4 h-4 absolute -top-2 right-0 text-primary" />
-                              </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold">
+                              {segment.Arrival.CityName} ({segment.Arrival.IATACode})
                             </div>
+                            <div className="text-2xl font-bold my-1">{formatDate(segment.Arrival.ScheduledTime).time}</div>
+                            <div className="text-sm text-muted-foreground">{formatDate(segment.Arrival.ScheduledTime).date}</div>
+                            <div className="text-sm mt-2">{segment.Arrival.AirportName}</div>
+                            <div className="text-sm text-muted-foreground">Terminal {segment.Arrival.Terminal || 1}</div>
+                          </div>
+                        </div>
+                      </div>
 
-                            <div className="text-right">
-                              <div className="text-lg font-bold">
-                                {segment.Arrival.CityName} ({segment.Arrival.IATACode})
-                              </div>
-                              <div className="text-2xl font-bold my-1">{formatDate(segment.Arrival.ScheduledTime).time}</div>
-                              <div className="text-sm text-muted-foreground">{formatDate(segment.Arrival.ScheduledTime).date}</div>
-                              <div className="text-sm mt-2">{segment.Arrival.AirportName}</div>
-                              <div className="text-sm text-muted-foreground">Terminal {segment.Arrival.Terminal || 1}</div>
+                      {index < outboundSegments.length - 1 && (
+                        <div className="flex items-center gap-3 p-4 bg-orange-50/80 dark:bg-orange-950/30 border-l-4 border-orange-500/80 dark:border-orange-400/50 rounded-r-xl backdrop-blur-sm">
+                          <Clock className="w-5 h-5 text-orange-500" />
+                          <div>
+                            <div className="font-medium">Layover at {segment.Arrival.AirportName}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Connection time: {getLayoverDuration(segment, outboundSegments[index + 1])}
                             </div>
                           </div>
                         </div>
-
-                        {index < outboundSegments.length - 1 && (
-                          <div className="flex items-center gap-3 p-4 bg-orange-50 border-l-4 border-orange-500 rounded">
-                            <Clock className="w-5 h-5 text-orange-500" />
-                            <div>
-                              <div className="font-medium">Layover at {segment.Arrival.AirportName}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Connection time: {getLayoverDuration(segment, outboundSegments[index + 1])}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {/* Return Segments */}
-                {returnSegments.length > 0 && (
-                  <>
-                    <div className="text-sm text-muted-foreground mb-4 mt-6">Return Flight</div>
-                    {returnSegments.map((segment, index) => (
-                      <div key={index} className="space-y-4">
-                        <div className="flex flex-col bg-muted/30 p-4 rounded-lg border">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <SegmentLogo segment={segment} />
-                              <div>
-                                <div className="font-medium">{segment.MarketingCarrier.carrierName}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  Flight {segment.MarketingCarrier.marketingCarrierFlightNumber} · {segment.CabinType} · {offer.SeatsRemaining || segment.SeatsRemaining || 9} Seats Left
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-sm font-medium">{segment.Duration}</div>
-                          </div>
-
-                          <div className="grid sm:grid-cols-3 gap-6">
-                            <div>
-                              <div className="text-lg font-bold">
-                                {segment.Departure.CityName} ({segment.Departure.IATACode})
-                              </div>
-                              <div className="text-2xl font-bold my-1">{formatDate(segment.Departure.ScheduledTime).time}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {formatDate(segment.Departure.ScheduledTime).date}
-                              </div>
-                              <div className="text-sm mt-2">{segment.Departure.AirportName}</div>
-                              <div className="text-sm text-muted-foreground">Terminal {segment.Departure.Terminal || 1}</div>
-                            </div>
-
-                            <div className="flex flex-col items-center justify-center">
-                              <div className="w-full h-px bg-border relative">
-                                <Plane className="w-4 h-4 absolute -top-2 right-0 text-primary" />
-                              </div>
-                            </div>
-
-                            <div className="text-right">
-                              <div className="text-lg font-bold">
-                                {segment.Arrival.CityName} ({segment.Arrival.IATACode})
-                              </div>
-                              <div className="text-2xl font-bold my-1">{formatDate(segment.Arrival.ScheduledTime).time}</div>
-                              <div className="text-sm text-muted-foreground">{formatDate(segment.Arrival.ScheduledTime).date}</div>
-                              <div className="text-sm mt-2">{segment.Arrival.AirportName}</div>
-                              <div className="text-sm text-muted-foreground">Terminal {segment.Arrival.Terminal || 1}</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {index < returnSegments.length - 1 && (
-                          <div className="flex items-center gap-3 p-4 bg-orange-50 border-l-4 border-orange-500 rounded">
-                            <Clock className="w-5 h-5 text-orange-500" />
-                            <div>
-                              <div className="font-medium">Layover at {segment.Arrival.AirportName}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Connection time: {getLayoverDuration(segment, returnSegments[index + 1])}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </>
-                )}
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             {activeTab === "fare-summary" && (
-              <div className="mt-6">
-                <div className="bg-muted/30 p-6 rounded-lg border space-y-6">
+              <div className="mt-6 bg-black/5 dark:bg-white/5 p-6 rounded-xl backdrop-blur-sm">
+                <div className="text-sm text-muted-foreground mb-4">Fare Summary</div>
+                <div className="space-y-2">
                   {/* Add Seats Remaining */}
                   {offer.SeatsRemaining > 0 && (
                     <div className="text-sm text-orange-600 font-medium">
@@ -898,20 +857,19 @@ const FlightCard: React.FC<{ offer: FlightOffer }> = ({ offer }) => {
             )}
 
             {activeTab === "baggage" && (
-              <div className="mt-6 space-y-6">
-                <div className="bg-muted/30 p-6 rounded-lg border">
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-lg font-medium mb-4">Check-in Baggage</h4>
-                      <div className="p-4 bg-background rounded border">
-                        <p>{offer.Baggage[0].CheckIn[0]?.allowance || 'N/A'}</p>
-                      </div>
+              <div className="mt-6 bg-black/5 dark:bg-white/5 p-6 rounded-xl backdrop-blur-sm">
+                <div className="text-sm text-muted-foreground mb-4">Baggage Information</div>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-lg font-medium mb-4">Check-in Baggage</h4>
+                    <div className="p-4 bg-background dark:bg-gray-900/50 rounded shadow-sm">
+                      <p>{offer.Baggage[0].CheckIn[0]?.allowance || 'N/A'}</p>
                     </div>
-                    <div>
-                      <h4 className="text-lg font-medium mb-4">Cabin Baggage</h4>
-                      <div className="p-4 bg-background rounded border">
-                        <p>{offer.Baggage[0].Cabin[0]?.allowance || 'N/A'}</p>
-                      </div>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-medium mb-4">Cabin Baggage</h4>
+                    <div className="p-4 bg-background dark:bg-gray-900/50 rounded shadow-sm">
+                      <p>{offer.Baggage[0].Cabin[0]?.allowance || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
