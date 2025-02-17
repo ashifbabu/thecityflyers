@@ -3,7 +3,7 @@
 import type React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plane, ChevronRight, Luggage, BaggageClaim, Receipt, ChevronDown, Clock } from "lucide-react"
+import { Plane, ChevronRight, Luggage, BaggageClaim, Receipt, ChevronDown, Clock, Check, X, Tag, Utensils, Armchair, Users, Star } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
 
@@ -221,19 +221,27 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
     return layovers;
   };
 
+  // Add this helper function after the existing helper functions
+  const getBaggageAllowance = (brand: UpSellBrand) => {
+    const adultBaggage = brand.upSellBrand.baggageAllowanceList?.[0]?.baggageAllowance?.checkIn?.find(
+      item => item.paxType === 'Adult'
+    );
+    return adultBaggage?.allowance || 'N/A';
+  };
+
   // Add the flight details tab content
   const renderFlightDetails = () => {
     if (activeTab !== 'flight-details') return null;
 
     return (
-      <div className="mt-4 space-y-4">
+      <div className="space-y-4 overflow-x-auto">
         {offer.OutboundSegments.map((segment, index) => {
           const layoverDetails = index < offer.OutboundSegments.length - 1 
             ? getLayoverDetails(offer.OutboundSegments)[index] 
             : null;
 
           return (
-            <div key={index} className="space-y-3">
+            <div key={index} className="space-y-3 min-w-[600px] sm:min-w-0">
               {/* Flight segment */}
               <div className="flex items-start justify-between p-4 bg-muted/30 rounded-lg">
                 <div className="space-y-2">
@@ -304,18 +312,9 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
   const renderFareSummary = () => {
     if (activeTab !== 'fare-summary') return null;
 
-    // Check if FareDetails exists
-    if (!offer.FareDetails || offer.FareDetails.length === 0) {
-      return (
-        <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-          <p className="text-sm text-muted-foreground">Fare details not available</p>
-        </div>
-      );
-    }
-
     return (
-      <div className="mt-4 space-y-4">
-        <div className="p-4 bg-muted/30 rounded-lg">
+      <div className="overflow-x-auto">
+        <div className="min-w-[600px] sm:min-w-0">
           {/* Table Header */}
           <div className="grid grid-cols-6 gap-2 text-sm font-medium border-b pb-2">
             <div>Pax Type</div>
@@ -367,30 +366,32 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
     if (activeTab !== 'baggage') return null;
 
     return (
-      <div className="mt-4 space-y-4">
-        {offer.Baggage.map((baggage, index) => (
-          <div key={index} className="p-4 bg-muted/30 rounded-lg space-y-4">
-            <div className="space-y-3">
-              <h3 className="font-medium">Check-in Baggage</h3>
-              {baggage.CheckIn.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-sm">
-                  <BaggageClaim className="w-4 h-4 text-muted-foreground" />
-                  <span>{item.allowance} ({item.paxType})</span>
-                </div>
-              ))}
-            </div>
+      <div className="overflow-x-auto">
+        <div className="min-w-[600px] sm:min-w-0">
+          {offer.Baggage.map((baggage, index) => (
+            <div key={index} className="p-4 bg-muted/30 rounded-lg space-y-4">
+              <div className="space-y-3">
+                <h3 className="font-medium">Check-in Baggage</h3>
+                {baggage.CheckIn.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    <BaggageClaim className="w-4 h-4 text-muted-foreground" />
+                    <span>{item.allowance} ({item.paxType})</span>
+                  </div>
+                ))}
+              </div>
 
-            <div className="space-y-3">
-              <h3 className="font-medium">Cabin Baggage</h3>
-              {baggage.Cabin.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-sm">
-                  <Luggage className="w-4 h-4 text-muted-foreground" />
-                  <span>{item.allowance} ({item.paxType})</span>
-                </div>
-              ))}
+              <div className="space-y-3">
+                <h3 className="font-medium">Cabin Baggage</h3>
+                {baggage.Cabin.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    <Luggage className="w-4 h-4 text-muted-foreground" />
+                    <span>{item.allowance} ({item.paxType})</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   };
@@ -486,30 +487,30 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                 </div>
               </div>
 
-              {/* Mobile View - Update to show stops */}
+              {/* Mobile View */}
               <div className="sm:hidden">
                 <div className="relative">
-                  {/* Vertical line for mobile */}
-                  <div className="absolute left-6 top-0 bottom-0 w-px bg-border" />
+                  {/* Green vertical line for mobile */}
+                  <div className="absolute left-0 top-[1.75rem] bottom-[1.75rem] w-[1px] bg-green-500" />
                   
                   {/* Departure */}
-                  <div className="relative flex gap-4 mb-6">
-                    <div className="w-3 h-3 rounded-full bg-black mt-2" />
+                  <div className="relative mb-6">
                     <div>
-                      <div className="text-base font-bold text-black dark:text-white text-lg">
+                      <div className="text-base font-bold text-black dark:text-white text-lg pl-4 relative">
+                        <div className="absolute -left-4 top-[50%] w-4 h-[1px] bg-green-500" />
                         {offer.OutboundSegments[0].Departure.CityName} ({offer.OutboundSegments[0].Departure.IATACode})
                       </div>
-                      <div className="text-4xl font-extrabold text-black dark:text-white">
+                      <div className="text-4xl font-extrabold text-black dark:text-white pl-4">
                         {formatTime(offer.OutboundSegments[0].Departure.ScheduledTime)}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground pl-4">
                         {formatDate(offer.OutboundSegments[0].Departure.ScheduledTime)}
                       </div>
-                      <div className="mt-1">
+                      <div className="mt-1 pl-4">
                         {offer.OutboundSegments[0].Departure.AirportName}
                       </div>
                       {offer.OutboundSegments[0].Departure.Terminal && (
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground pl-4">
                           Terminal: {offer.OutboundSegments[0].Departure.Terminal}
                         </div>
                       )}
@@ -517,32 +518,31 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                   </div>
 
                   {/* Duration info for mobile */}
-                  <div className="relative flex gap-4 mb-6">
-                    <div className="w-3 h-3 rounded-full bg-transparent" />
+                  <div className="relative mb-6 pl-4">
                     <div className="text-sm">
                       {getTotalDuration(offer.OutboundSegments)} • {getStopsWithAirports(offer.OutboundSegments)}
                     </div>
                   </div>
 
                   {/* Final Destination */}
-                  <div className="relative flex gap-4">
-                    <div className="w-3 h-3 rounded-full bg-black mt-2" />
+                  <div className="relative">
                     <div>
-                      <div className="text-base font-bold text-black dark:text-white text-lg">
+                      <div className="text-base font-bold text-black dark:text-white text-lg pl-4 relative">
+                        <div className="absolute -left-4 top-[50%] w-4 h-[1px] bg-green-500" />
                         {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.CityName}
                         ({offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.IATACode})
                       </div>
-                      <div className="text-4xl font-extrabold text-black dark:text-white">
+                      <div className="text-4xl font-extrabold text-black dark:text-white pl-4">
                         {formatTime(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground pl-4">
                         {formatDate(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
                       </div>
-                      <div className="mt-1">
+                      <div className="mt-1 pl-4">
                         {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.AirportName}
                       </div>
                       {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal && (
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground pl-4">
                           Terminal: {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal}
                         </div>
                       )}
@@ -569,35 +569,104 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
 
           {/* Right side - Fare section */}
           <div className="lg:border-l lg:pl-4 flex flex-col justify-between">
-            <div>
+            <div className="space-y-4">
               <Select value={selectedFare} onValueChange={handleBrandSelect}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Economy" />
+                  <SelectValue placeholder="Select Fare" />
                 </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-950 border shadow-lg">
+                <SelectContent className="max-h-[300px] bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
                   {offer.UpSellBrandList?.map((brand) => (
                     <SelectItem 
                       key={brand.upSellBrand.offerId} 
                       value={brand.upSellBrand.brandName}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                      className="hover:bg-gray-100 dark:hover:bg-gray-900"
                     >
                       {brand.upSellBrand.brandName}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <div className="text-sm text-muted-foreground mt-2">
-                Upgrade to enjoy premium services
-              </div>
+
+              {/* Fare Details */}
+              {selectedBrand && (
+                <div className="space-y-3 text-sm">
+                  {/* Refundable Status - Keep original colors */}
+                  <div className="flex items-center gap-2">
+                    {selectedBrand.upSellBrand.refundable ? (
+                      <>
+                        <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="w-3 h-3 text-green-600" />
+                        </div>
+                        <span className="text-green-600">Refundable</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center">
+                          <X className="w-3 h-3 text-red-600" />
+                        </div>
+                        <span className="text-red-600">Non-Refundable</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Update all other icons to green */}
+                  {/* Baggage */}
+                  <div className="flex items-center gap-2">
+                    <BaggageClaim className="w-4 h-4 text-green-600" />
+                    <span>Adult Baggage: {getBaggageAllowance(selectedBrand)}</span>
+                  </div>
+
+                  {/* Booking Class */}
+                  {selectedBrand.upSellBrand.rbd && (
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-green-600" />
+                      <span>Booking Class: {selectedBrand.upSellBrand.rbd}</span>
+                    </div>
+                  )}
+
+                  {/* Meal */}
+                  {selectedBrand.upSellBrand.meal && (
+                    <div className="flex items-center gap-2">
+                      <Utensils className="w-4 h-4 text-green-600" />
+                      <span>Meal Included</span>
+                    </div>
+                  )}
+
+                  {/* Seat */}
+                  {selectedBrand.upSellBrand.seat && (
+                    <div className="flex items-center gap-2">
+                      <Armchair className="w-4 h-4 text-green-600" />
+                      <span>{selectedBrand.upSellBrand.seat}</span>
+                    </div>
+                  )}
+
+                  {/* Seats Remaining */}
+                  {offer.SeatsRemaining && (
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-green-600" />
+                      <span>{offer.SeatsRemaining} seats remaining</span>
+                    </div>
+                  )}
+
+                  {/* Miles */}
+                  {selectedBrand.upSellBrand.miles && (
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-green-600" />
+                      <span>{selectedBrand.upSellBrand.miles}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
+            {/* Price and Button */}
             <div>
               <div className="text-right mb-4">
                 <div className="text-3xl font-bold">
-                  BDT {formatPrice(offer.Pricing.totalPayable.total)}
+                  BDT {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || offer.Pricing.totalPayable.total)}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Total Price
+                  Total Price for {totalPassengers} {totalPassengers > 1 ? 'passengers' : 'passenger'}
                 </div>
               </div>
               <Button 
@@ -610,9 +679,10 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
           </div>
         </div>
 
-        {/* Bottom Tabs - Simplified */}
+        {/* Bottom Tabs - Improved Responsiveness */}
         <div className="mt-4 border-t pt-4">
-          <div className="flex flex-wrap gap-2">
+          {/* Tabs Container */}
+          <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
             <TabButton
               active={activeTab === "flight-details"}
               onClick={() => setActiveTab(activeTab === "flight-details" ? null : "flight-details")}
@@ -635,12 +705,16 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
               showChevron
             />
           </div>
-        </div>
 
-        {/* Tab Content - Keep only this render */}
-        {activeTab === 'flight-details' && renderFlightDetails()}
-        {activeTab === 'fare-summary' && renderFareSummary()}
-        {activeTab === 'baggage' && renderBaggageInfo()}
+          {/* Tab Content - Improved Responsiveness */}
+          <div className="relative mt-4 overflow-x-auto">
+            <div className="min-w-full">
+              {activeTab === 'flight-details' && renderFlightDetails()}
+              {activeTab === 'fare-summary' && renderFareSummary()}
+              {activeTab === 'baggage' && renderBaggageInfo()}
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
@@ -663,18 +737,19 @@ const TabButton = ({
   <button
     onClick={onClick}
     className={`
-      flex items-center gap-2 px-4 py-2 
-      text-sm font-medium
+      flex items-center gap-2 px-4 py-2 rounded-md
+      text-sm font-medium whitespace-nowrap
+      transition-colors duration-200
       ${active 
-        ? "text-black dark:text-white" 
-        : "text-gray-600 dark:text-gray-400"
+        ? "bg-gray-100 dark:bg-gray-800 text-black dark:text-white" 
+        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900"
       }
     `}
   >
     {icon}
     <span>{label}</span>
     {showChevron && (
-      <ChevronDown className={`h-4 w-4 ml-1 transition-transform ${active ? 'rotate-180' : ''}`} />
+      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${active ? 'rotate-180' : ''}`} />
     )}
   </button>
 );
