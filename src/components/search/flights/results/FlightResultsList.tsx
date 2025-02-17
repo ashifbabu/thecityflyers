@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import FlightCard from '@/components/flightcard/FlightCard';
 import MultiCityFlightCard from '@/components/flightcard/MultiCityFlightCard';
 import OneWayFlightCard from '@/components/flightcard/OneWayFlightCard';
+import ReturnFlightCard from '@/components/flightcard/ReturnFlightCard';
 
 interface FlightResultsListProps {
   flights: any[];
@@ -94,9 +95,10 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
             
             case 'roundTrip':
               return (
-                <FlightCard 
+                <ReturnFlightCard 
                   key={flight.OfferId || index} 
-                  offer={flight} 
+                  offer={flight}
+                  totalPassengers={totalPassengers}
                 />
               );
             

@@ -198,11 +198,12 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
     return `${stops} Stop${stops > 1 ? 's' : ''}`;
   };
 
-  // Add this helper function to get stops with airport codes
+  // Update the getStopsWithAirports function
   const getStopsWithAirports = (segments: FlightSegment[]) => {
     if (segments.length <= 1) return "Direct";
     const stopAirports = segments.slice(0, -1).map(segment => segment.Arrival.IATACode);
-    return `${segments.length - 1} ${segments.length - 1 > 1 ? 'Stops' : 'Stop'} ${stopAirports.join(', ')}`;
+    const layoverTime = getLayoverDuration(segments[0], segments[1]); // Get layover time for first connection
+    return `${layoverTime} • ${segments.length - 1} Stop ${stopAirports.join(', ')}`;
   };
 
   // Add this helper function to format layover details
@@ -254,7 +255,10 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                     <div>
                       <div className="font-medium">{segment.MarketingCarrier.carrierName}</div>
                       <div className="text-sm text-muted-foreground">
-                        Flight {segment.MarketingCarrier.marketingCarrierFlightNumber}
+                        <span className="font-bold">
+                          {segment.MarketingCarrier.carrierDesigCode}
+                        </span>
+                        -{segment.MarketingCarrier.marketingCarrierFlightNumber}
                       </div>
                     </div>
                   </div>
@@ -419,8 +423,15 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                     {offer.OutboundSegments[0].MarketingCarrier.carrierName}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {offer.OutboundSegments[0].MarketingCarrier.marketingCarrierFlightNumber}
-                    {offer.OutboundSegments.length > 1 && ` +${offer.OutboundSegments.length - 1} more`}
+                    {offer.OutboundSegments.map((segment, index) => (
+                      <span key={index}>
+                        {index > 0 && ", "}
+                        <span className="font-bold">
+                          {segment.MarketingCarrier.carrierDesigCode}
+                        </span>
+                        -{segment.MarketingCarrier.marketingCarrierFlightNumber}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -490,27 +501,43 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
               {/* Mobile View */}
               <div className="sm:hidden">
                 <div className="relative">
-                  {/* Green vertical line for mobile */}
-                  <div className="absolute left-0 top-[1.75rem] bottom-[1.75rem] w-[1px] bg-green-500" />
+                  {/* Timeline dots and line */}
+                  <div className="absolute left-0 top-0 bottom-0 flex flex-col items-center">
+                    {/* Top dot */}
+                    <div className="relative">
+                      <div className="w-2.5 h-2.5 rounded-full bg-gray-400 dark:bg-gray-500" />
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        <Plane className="w-1.5 h-1.5 text-white" />
+                      </div>
+                    </div>
+                    {/* Connecting line */}
+                    <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-700 my-2" />
+                    {/* Bottom dot */}
+                    <div className="relative">
+                      <div className="w-2.5 h-2.5 rounded-full bg-gray-400 dark:bg-gray-500" />
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        <Plane className="w-1.5 h-1.5 text-white" />
+                      </div>
+                    </div>
+                  </div>
                   
                   {/* Departure */}
-                  <div className="relative mb-6">
+                  <div className="relative mb-6 pl-4">
                     <div>
-                      <div className="text-base font-bold text-black dark:text-white text-lg pl-4 relative">
-                        <div className="absolute -left-4 top-[50%] w-4 h-[1px] bg-green-500" />
+                      <div className="text-base font-bold text-black dark:text-white text-lg">
                         {offer.OutboundSegments[0].Departure.CityName} ({offer.OutboundSegments[0].Departure.IATACode})
                       </div>
-                      <div className="text-4xl font-extrabold text-black dark:text-white pl-4">
+                      <div className="text-3xl font-extrabold text-black dark:text-white">
                         {formatTime(offer.OutboundSegments[0].Departure.ScheduledTime)}
                       </div>
-                      <div className="text-sm text-muted-foreground pl-4">
+                      <div className="text-sm text-muted-foreground">
                         {formatDate(offer.OutboundSegments[0].Departure.ScheduledTime)}
                       </div>
-                      <div className="mt-1 pl-4">
+                      <div className="mt-1 text-sm">
                         {offer.OutboundSegments[0].Departure.AirportName}
                       </div>
                       {offer.OutboundSegments[0].Departure.Terminal && (
-                        <div className="text-sm text-muted-foreground pl-4">
+                        <div className="text-sm text-muted-foreground">
                           Terminal: {offer.OutboundSegments[0].Departure.Terminal}
                         </div>
                       )}
@@ -519,30 +546,29 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
 
                   {/* Duration info for mobile */}
                   <div className="relative mb-6 pl-4">
-                    <div className="text-sm">
-                      {getTotalDuration(offer.OutboundSegments)} • {getStopsWithAirports(offer.OutboundSegments)}
+                    <div className="text-sm bg-gray-50 dark:bg-gray-900/20 px-3 py-2 rounded-md inline-block">
+                      {getStopsWithAirports(offer.OutboundSegments)}
                     </div>
                   </div>
 
                   {/* Final Destination */}
-                  <div className="relative">
+                  <div className="relative pl-4">
                     <div>
-                      <div className="text-base font-bold text-black dark:text-white text-lg pl-4 relative">
-                        <div className="absolute -left-4 top-[50%] w-4 h-[1px] bg-green-500" />
+                      <div className="text-base font-bold text-black dark:text-white text-lg">
                         {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.CityName}
                         ({offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.IATACode})
                       </div>
-                      <div className="text-4xl font-extrabold text-black dark:text-white pl-4">
+                      <div className="text-3xl font-extrabold text-black dark:text-white">
                         {formatTime(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
                       </div>
-                      <div className="text-sm text-muted-foreground pl-4">
+                      <div className="text-sm text-muted-foreground">
                         {formatDate(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
                       </div>
-                      <div className="mt-1 pl-4">
+                      <div className="mt-1 text-sm">
                         {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.AirportName}
                       </div>
                       {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal && (
-                        <div className="text-sm text-muted-foreground pl-4">
+                        <div className="text-sm text-muted-foreground">
                           Terminal: {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal}
                         </div>
                       )}
@@ -551,7 +577,6 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                 </div>
               </div>
             </div>
-              
             {/* Info row - Adjusted spacing */}
             <div className="mt-3 pt-3 border-t border-border">
               <div className="flex items-center justify-between text-sm">
@@ -666,7 +691,7 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                   BDT {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || offer.Pricing.totalPayable.total)}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Total Price for {totalPassengers} {totalPassengers > 1 ? 'passengers' : 'passenger'}
+                  Total Price
                 </div>
               </div>
               <Button 
