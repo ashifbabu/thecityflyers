@@ -33,6 +33,7 @@ interface FlightSegment {
   SeatsRemaining?: number
   Logo: string
   RBD: string
+  ReturnJourney: boolean
 }
 
 interface UpSellBrand {
@@ -71,96 +72,47 @@ interface ReturnFlightOffer {
   OfferId: string
   OutboundSegments: FlightSegment[]
   InboundSegments: FlightSegment[]
-  FareDetails: {
-    Outbound: Array<{
-      BaseFare: number
-      Tax: number
-      OtherFee: number
-      Discount: number
-      VAT: number
-      Currency: string
-      PaxType: string
-      PaxCount: number
-      SubTotal: number
-    }>
-    Inbound: Array<{
-      BaseFare: number
-      Tax: number
-      OtherFee: number
-      Discount: number
-      VAT: number
-      Currency: string
-      PaxType: string
-      PaxCount: number
-      SubTotal: number
-    }>
-  }
+  FareDetails: Array<{
+    BaseFare: number
+    Tax: number
+    OtherFee: number
+    Discount: number
+    VAT: number
+    Currency: string
+    PaxType: string
+    PaxCount: number
+    SubTotal: number
+  }>
   Pricing: {
-    FareDetails: {
-      Outbound: Array<{
-        BaseFare: number
-        Tax: number
-        OtherFee: number
-        Discount: number
-        VAT: number
-        Currency: string
-        PaxType: string
-        PaxCount: number
-        SubTotal: number
-      }>
-      Inbound: Array<{
-        BaseFare: number
-        Tax: number
-        OtherFee: number
-        Discount: number
-        VAT: number
-        Currency: string
-        PaxType: string
-        PaxCount: number
-        SubTotal: number
-      }>
+    totalPayable: {
+      total: number
+      currency: string
     }
-    PriceBreakdown: {
-      Outbound: {
-        totalPayable: { total: number; currency: string }
-        gross: { total: number; currency: string }
-        discount: { total: number; currency: string }
-        totalVAT: { total: number; currency: string }
-      }
-      Inbound: {
-        totalPayable: { total: number; currency: string }
-        gross: { total: number; currency: string }
-        discount: { total: number; currency: string }
-        totalVAT: { total: number; currency: string }
-      }
+    gross: {
+      total: number
+      currency: string
+    }
+    discount: {
+      total: number
+      currency: string
+    }
+    totalVAT: {
+      total: number
+      currency: string
     }
   }
-  Baggage: {
-    Outbound: Array<{
-      Departure: string
-      Arrival: string
-      CheckIn: Array<{
-        paxType: string
-        allowance: string
-      }>
-      Cabin: Array<{
-        paxType: string
-        allowance: string
-      }>
+  Baggage: Array<{
+    Departure: string
+    Arrival: string
+    CheckIn: Array<{
+      paxType: string
+      allowance: string
     }>
-    Inbound: Array<{
-      Departure: string
-      Arrival: string
-      CheckIn: Array<{
-        paxType: string
-        allowance: string
-      }>
-      Cabin: Array<{
-        paxType: string
-        allowance: string
-      }>
+    Cabin: Array<{
+      paxType: string
+      allowance: string
     }>
-  }
+  }>
   Refundable: boolean
   SeatsRemaining: number
   UpSellBrandList: UpSellBrand[] | null
@@ -273,13 +225,13 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
     return layovers;
   };
 
-  // Add this helper function to safely get baggage allowance
+  // Update the getBaggageAllowance function
   const getBaggageAllowance = () => {
-    if (!offer.Baggage?.Outbound?.[0]?.CheckIn) {
+    if (!offer.Baggage?.[0]?.CheckIn) {
       return '20kg';
     }
     
-    const checkInBaggage = offer.Baggage.Outbound[0].CheckIn.find(
+    const checkInBaggage = offer.Baggage[0].CheckIn.find(
       (item: { paxType: string; allowance: string }) => item.paxType === 'Adult'
     );
     
@@ -301,18 +253,34 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
 
   // Add this helper function to calculate stay duration
   const getStayDuration = () => {
-    const outboundArrival = new Date(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)
-    const inboundDeparture = new Date(offer.InboundSegments[0].Departure.ScheduledTime)
-    const diffInMinutes = Math.floor((inboundDeparture.getTime() - outboundArrival.getTime()) / (1000 * 60))
-    const days = Math.floor(diffInMinutes / (24 * 60))
-    const hours = Math.floor((diffInMinutes % (24 * 60)) / 60)
-    const minutes = diffInMinutes % 60
+    const { outbound, inbound } = getSegments();
+    
+    const outboundArrival = new Date(outbound[outbound.length - 1].Arrival.ScheduledTime);
+    const inboundDeparture = new Date(inbound[0].Departure.ScheduledTime);
+    const diffInMinutes = Math.floor((inboundDeparture.getTime() - outboundArrival.getTime()) / (1000 * 60));
+    const days = Math.floor(diffInMinutes / (24 * 60));
+    const hours = Math.floor((diffInMinutes % (24 * 60)) / 60);
+    const minutes = diffInMinutes % 60;
     
     if (days > 0) {
-      return `${days}d ${hours}h`
+      return `${days}d ${hours}h`;
     }
-    return `${hours}h ${minutes}m`
-  }
+    return `${hours}h ${minutes}m`;
+  };
+
+  // Add helper function to separate outbound and inbound segments
+  const getSegments = () => {
+    const outbound = offer.OutboundSegments.filter(segment => !segment.ReturnJourney);
+    const inbound = offer.OutboundSegments.filter(segment => segment.ReturnJourney);
+    
+    return {
+      outbound,
+      inbound: inbound.length > 0 ? inbound : offer.InboundSegments
+    };
+  };
+
+  // Update where segments are used
+  const { outbound, inbound } = getSegments();
 
   // Update the flight details tab content
   const renderFlightDetails = () => {
@@ -324,9 +292,9 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
         <div>
           <div className="text-sm font-medium text-muted-foreground mb-4">Departure Flight</div>
           <div className="space-y-4">
-            {offer.OutboundSegments.map((segment, index) => {
-              const layoverDetails = index < offer.OutboundSegments.length - 1 
-                ? getLayoverDetails(offer.OutboundSegments)[index] 
+            {outbound.map((segment, index) => {
+              const layoverDetails = index < outbound.length - 1 
+                ? getLayoverDetails(outbound)[index] 
                 : null;
 
               return (
@@ -416,9 +384,9 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
         <div>
           <div className="text-sm font-medium text-muted-foreground mb-4">Return Flight</div>
           <div className="space-y-4">
-            {offer.InboundSegments.map((segment, index) => {
-              const layoverDetails = index < offer.InboundSegments.length - 1 
-                ? getLayoverDetails(offer.InboundSegments)[index] 
+            {inbound.map((segment, index) => {
+              const layoverDetails = index < inbound.length - 1 
+                ? getLayoverDetails(inbound)[index] 
                 : null;
 
               return (
@@ -498,62 +466,48 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
   const renderFareSummary = () => {
     if (activeTab !== 'fare-summary') return null;
 
-    const outboundFares = offer.Pricing.FareDetails.Outbound;
-    const inboundFares = offer.Pricing.FareDetails.Inbound;
-
     return (
       <div className="overflow-x-auto">
         <div className="min-w-[600px] sm:min-w-0 space-y-6">
           {/* Agent Summary Section */}
           <div className="space-y-4">
-            <div className="text-lg font-semibold">Agent Summary</div>
+            <div className="text-lg font-semibold">Fare Summary</div>
             
-            {/* Adult Fares */}
-            {outboundFares.map((fare, index) => {
-              const inboundFare = inboundFares[index];
-              const totalBaseFare = fare.BaseFare + inboundFare.BaseFare;
-              const totalTax = fare.Tax + inboundFare.Tax;
-              const totalOtherFee = fare.OtherFee + inboundFare.OtherFee;
-              const totalDiscount = fare.Discount + inboundFare.Discount;
-
-              return (
-                <div key={fare.PaxType} className="space-y-2">
-                  <div className="font-medium">Passenger: {fare.PaxType}</div>
-                  <div className="grid grid-cols-2 gap-2 text-sm pl-4">
-                    <div className="text-muted-foreground">Base Fare</div>
-                    <div>BDT {formatPrice(totalBaseFare)}</div>
-                    <div className="text-muted-foreground">Taxes</div>
-                    <div>BDT {formatPrice(totalTax)}</div>
-                    <div className="text-muted-foreground">Other Charge</div>
-                    <div>BDT {formatPrice(totalOtherFee)}</div>
-                    <div className="text-muted-foreground">Discount</div>
-                    <div className="text-green-600">BDT {formatPrice(totalDiscount)}</div>
-                    <div className="text-muted-foreground">Pax count</div>
-                    <div>{fare.PaxCount}</div>
-                  </div>
+            {/* Fare Details */}
+            {offer.FareDetails.map((fare, index) => (
+              <div key={index} className="space-y-2">
+                <div className="font-medium">
+                  {fare.PaxType} × {fare.PaxCount}
                 </div>
-              );
-            })}
+                <div className="grid grid-cols-2 gap-2 text-sm pl-4">
+                  <div className="text-muted-foreground">Base Fare</div>
+                  <div>BDT {formatPrice(fare.BaseFare)}</div>
+                  <div className="text-muted-foreground">Tax</div>
+                  <div>BDT {formatPrice(fare.Tax)}</div>
+                  <div className="text-muted-foreground">Other Charges</div>
+                  <div>BDT {formatPrice(fare.OtherFee)}</div>
+                  <div className="text-muted-foreground">VAT</div>
+                  <div>BDT {formatPrice(fare.VAT)}</div>
+                  <div className="font-medium">Subtotal</div>
+                  <div className="font-medium">BDT {formatPrice(fare.SubTotal)}</div>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Summary Section */}
+          {/* Total Section */}
           <div className="space-y-3 border-t pt-3">
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="text-muted-foreground">Total AIT & Vat</div>
-              <div>BDT {formatPrice(
-                offer.Pricing.PriceBreakdown.Outbound.totalVAT.total +
-                offer.Pricing.PriceBreakdown.Inbound.totalVAT.total
-              )}</div>
-              <div className="text-muted-foreground">Total Discount</div>
-              <div className="text-green-600">-BDT {formatPrice(
-                offer.Pricing.PriceBreakdown.Outbound.discount.total +
-                offer.Pricing.PriceBreakdown.Inbound.discount.total
-              )}</div>
+              {offer.Pricing.totalVAT && (
+                <>
+                  <div className="text-muted-foreground">Total VAT</div>
+                  <div>BDT {formatPrice(offer.Pricing.totalVAT.total)}</div>
+                </>
+              )}
               <div className="font-medium text-base">Grand Total</div>
-              <div className="font-medium text-base">BDT {formatPrice(
-                offer.Pricing.PriceBreakdown.Outbound.totalPayable.total +
-                offer.Pricing.PriceBreakdown.Inbound.totalPayable.total
-              )}</div>
+              <div className="font-medium text-base">
+                BDT {formatPrice(offer.Pricing.totalPayable?.total || 0)}
+              </div>
             </div>
           </div>
         </div>
@@ -566,64 +520,39 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
 
     return (
       <div className="space-y-6">
-        {/* Outbound Baggage */}
-        <div className="space-y-4">
-          <div className="font-medium">Departure Flight Baggage</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {offer.Baggage.map((baggage, index) => (
+          <div key={index} className="space-y-4">
+            <div className="font-semibold">
+              {baggage.Departure} → {baggage.Arrival}
+            </div>
+            
             {/* Check-in Baggage */}
             <div className="space-y-2">
-              <div className="text-sm font-medium text-muted-foreground">Check-in Baggage</div>
-              {offer.Baggage.Outbound[0].CheckIn.map((item, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span>{item.paxType}</span>
-                  <span>{item.allowance}</span>
-                </div>
-              ))}
+              <div className="text-sm font-medium">Check-in Baggage</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {baggage.CheckIn.map((item, idx) => (
+                  <div key={idx} className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                    <div className="text-sm text-muted-foreground">{item.paxType}</div>
+                    <div className="font-medium">{item.allowance}</div>
+                  </div>
+                ))}
+              </div>
             </div>
+
             {/* Cabin Baggage */}
             <div className="space-y-2">
-              <div className="text-sm font-medium text-muted-foreground">Cabin Baggage</div>
-              {offer.Baggage.Outbound[0].Cabin.map((item, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span>{item.paxType}</span>
-                  <span>{item.allowance}</span>
-                </div>
-              ))}
+              <div className="text-sm font-medium">Cabin Baggage</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {baggage.Cabin.map((item, idx) => (
+                  <div key={idx} className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                    <div className="text-sm text-muted-foreground">{item.paxType}</div>
+                    <div className="font-medium">{item.allowance}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Inbound Baggage */}
-        <div className="space-y-4">
-          <div className="font-medium">Return Flight Baggage</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Check-in Baggage */}
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-muted-foreground">Check-in Baggage</div>
-              {offer.Baggage.Inbound[0].CheckIn.map((item, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span>{item.paxType}</span>
-                  <span>{item.allowance}</span>
-                </div>
-              ))}
-            </div>
-            {/* Cabin Baggage */}
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-muted-foreground">Cabin Baggage</div>
-              {offer.Baggage.Inbound[0].Cabin.map((item, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span>{item.paxType}</span>
-                  <span>{item.allowance}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Information */}
-        <div className="text-sm text-muted-foreground">
-          <p>* Baggage allowance may vary based on fare class and route</p>
-        </div>
+        ))}
       </div>
     );
   };
@@ -641,19 +570,19 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <img
-                    src={offer.OutboundSegments[0].Logo || DEFAULT_AIRLINE_LOGO}
-                    alt={offer.OutboundSegments[0].MarketingCarrier.carrierName}
+                    src={outbound[0].Logo || DEFAULT_AIRLINE_LOGO}
+                    alt={outbound[0].MarketingCarrier.carrierName}
                     className="w-10 h-10 object-contain"
                   />
                   <div>
                     <div className="text-lg font-semibold">
-                      {offer.OutboundSegments[0].MarketingCarrier.carrierName}
+                      {outbound[0].MarketingCarrier.carrierName}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       <span className="font-bold">
-                        {offer.OutboundSegments[0].MarketingCarrier.carrierDesigCode}
+                        {outbound[0].MarketingCarrier.carrierDesigCode}
                       </span>
-                      -{offer.OutboundSegments[0].MarketingCarrier.marketingCarrierFlightNumber}
+                      -{outbound[0].MarketingCarrier.marketingCarrierFlightNumber}
                     </div>
                   </div>
                 </div>
@@ -666,20 +595,20 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                   {/* Departure */}
                   <div>
                     <div className="text-base font-bold">
-                      {offer.OutboundSegments[0].Departure.CityName} ({offer.OutboundSegments[0].Departure.IATACode})
+                      {outbound[0].Departure.CityName} ({outbound[0].Departure.IATACode})
                     </div>
                     <div className="text-4xl font-extrabold my-1">
-                      {formatTime(offer.OutboundSegments[0].Departure.ScheduledTime)}
+                      {formatTime(outbound[0].Departure.ScheduledTime)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(offer.OutboundSegments[0].Departure.ScheduledTime)}
+                      {formatDate(outbound[0].Departure.ScheduledTime)}
                     </div>
                     <div className="mt-1">
-                      {offer.OutboundSegments[0].Departure.AirportName}
+                      {outbound[0].Departure.AirportName}
                     </div>
-                    {offer.OutboundSegments[0].Departure.Terminal && (
+                    {outbound[0].Departure.Terminal && (
                       <div className="text-sm text-muted-foreground">
-                        Terminal: {offer.OutboundSegments[0].Departure.Terminal}
+                        Terminal: {outbound[0].Departure.Terminal}
                       </div>
                     )}
                   </div>
@@ -687,34 +616,34 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                   {/* Duration */}
                   <div className="flex flex-col items-center justify-center">
                     <div className="text-sm font-medium">
-                      {getTotalDuration(offer.OutboundSegments)}
+                      {getTotalDuration(outbound)}
                     </div>
                     <div className="w-32 h-px bg-border relative my-2">
                       <Plane className="w-4 h-4 absolute -top-2 right-0" />
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {getStopsWithAirports(offer.OutboundSegments)}
+                      {getStopsWithAirports(outbound)}
                     </div>
                   </div>
 
                   {/* Arrival */}
                   <div className="text-right">
                     <div className="text-base font-bold">
-                      {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.CityName} 
-                      ({offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.IATACode})
+                      {outbound[outbound.length - 1].Arrival.CityName} 
+                      ({outbound[outbound.length - 1].Arrival.IATACode})
                     </div>
                     <div className="text-4xl font-extrabold my-1">
-                      {formatTime(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
+                      {formatTime(outbound[outbound.length - 1].Arrival.ScheduledTime)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
+                      {formatDate(outbound[outbound.length - 1].Arrival.ScheduledTime)}
                     </div>
                     <div className="mt-1">
-                      {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.AirportName}
+                      {outbound[outbound.length - 1].Arrival.AirportName}
                     </div>
-                    {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal && (
+                    {outbound[outbound.length - 1].Arrival.Terminal && (
                       <div className="text-sm text-muted-foreground">
-                        Terminal: {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal}
+                        Terminal: {outbound[outbound.length - 1].Arrival.Terminal}
                       </div>
                     )}
                   </div>
@@ -747,20 +676,20 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     <div className="relative mb-6 pl-4">
                       <div>
                         <div className="text-base font-bold text-black dark:text-white text-lg">
-                          {offer.OutboundSegments[0].Departure.CityName} ({offer.OutboundSegments[0].Departure.IATACode})
+                          {outbound[0].Departure.CityName} ({outbound[0].Departure.IATACode})
                         </div>
                         <div className="text-3xl font-extrabold text-black dark:text-white">
-                          {formatTime(offer.OutboundSegments[0].Departure.ScheduledTime)}
+                          {formatTime(outbound[0].Departure.ScheduledTime)}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {formatDate(offer.OutboundSegments[0].Departure.ScheduledTime)}
+                          {formatDate(outbound[0].Departure.ScheduledTime)}
                         </div>
                         <div className="mt-1 text-sm">
-                          {offer.OutboundSegments[0].Departure.AirportName}
+                          {outbound[0].Departure.AirportName}
                         </div>
-                        {offer.OutboundSegments[0].Departure.Terminal && (
+                        {outbound[0].Departure.Terminal && (
                           <div className="text-sm text-muted-foreground">
-                            Terminal: {offer.OutboundSegments[0].Departure.Terminal}
+                            Terminal: {outbound[0].Departure.Terminal}
                           </div>
                         )}
                       </div>
@@ -769,7 +698,7 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     {/* Duration info for mobile */}
                     <div className="relative mb-6 pl-4">
                       <div className="text-sm bg-gray-50 dark:bg-gray-900/20 px-3 py-2 rounded-md inline-block">
-                        {getStopsWithAirports(offer.OutboundSegments)}
+                        {getStopsWithAirports(outbound)}
                       </div>
                     </div>
 
@@ -777,21 +706,21 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     <div className="relative pl-4">
                       <div>
                         <div className="text-base font-bold text-black dark:text-white text-lg">
-                          {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.CityName}
-                          ({offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.IATACode})
+                          {outbound[outbound.length - 1].Arrival.CityName}
+                          ({outbound[outbound.length - 1].Arrival.IATACode})
                         </div>
                         <div className="text-3xl font-extrabold text-black dark:text-white">
-                          {formatTime(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
+                          {formatTime(outbound[outbound.length - 1].Arrival.ScheduledTime)}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {formatDate(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
+                          {formatDate(outbound[outbound.length - 1].Arrival.ScheduledTime)}
                         </div>
                         <div className="mt-1 text-sm">
-                          {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.AirportName}
+                          {outbound[outbound.length - 1].Arrival.AirportName}
                         </div>
-                        {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal && (
+                        {outbound[outbound.length - 1].Arrival.Terminal && (
                           <div className="text-sm text-muted-foreground">
-                            Terminal: {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal}
+                            Terminal: {outbound[outbound.length - 1].Arrival.Terminal}
                           </div>
                         )}
                       </div>
@@ -821,19 +750,19 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <img
-                    src={offer.InboundSegments[0].Logo || DEFAULT_AIRLINE_LOGO}
-                    alt={offer.InboundSegments[0].MarketingCarrier.carrierName}
+                    src={inbound[0].Logo || DEFAULT_AIRLINE_LOGO}
+                    alt={inbound[0].MarketingCarrier.carrierName}
                     className="w-10 h-10 object-contain"
                   />
                   <div>
                     <div className="text-lg font-semibold">
-                      {offer.InboundSegments[0].MarketingCarrier.carrierName}
+                      {inbound[0].MarketingCarrier.carrierName}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       <span className="font-bold">
-                        {offer.InboundSegments[0].MarketingCarrier.carrierDesigCode}
+                        {inbound[0].MarketingCarrier.carrierDesigCode}
                       </span>
-                      -{offer.InboundSegments[0].MarketingCarrier.marketingCarrierFlightNumber}
+                      -{inbound[0].MarketingCarrier.marketingCarrierFlightNumber}
                     </div>
                   </div>
                 </div>
@@ -846,20 +775,20 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                   {/* Departure */}
                   <div>
                     <div className="text-base font-bold">
-                      {offer.InboundSegments[0].Departure.CityName} ({offer.InboundSegments[0].Departure.IATACode})
+                      {inbound[0].Departure.CityName} ({inbound[0].Departure.IATACode})
                     </div>
                     <div className="text-4xl font-extrabold my-1">
-                      {formatTime(offer.InboundSegments[0].Departure.ScheduledTime)}
+                      {formatTime(inbound[0].Departure.ScheduledTime)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(offer.InboundSegments[0].Departure.ScheduledTime)}
+                      {formatDate(inbound[0].Departure.ScheduledTime)}
                     </div>
                     <div className="mt-1">
-                      {offer.InboundSegments[0].Departure.AirportName}
+                      {inbound[0].Departure.AirportName}
                     </div>
-                    {offer.InboundSegments[0].Departure.Terminal && (
+                    {inbound[0].Departure.Terminal && (
                       <div className="text-sm text-muted-foreground">
-                        Terminal: {offer.InboundSegments[0].Departure.Terminal}
+                        Terminal: {inbound[0].Departure.Terminal}
                       </div>
                     )}
                   </div>
@@ -867,34 +796,34 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                   {/* Duration */}
                   <div className="flex flex-col items-center justify-center">
                     <div className="text-sm font-medium">
-                      {getTotalDuration(offer.InboundSegments)}
+                      {getTotalDuration(inbound)}
                     </div>
                     <div className="w-32 h-px bg-border relative my-2">
                       <Plane className="w-4 h-4 absolute -top-2 right-0" />
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {getStopsWithAirports(offer.InboundSegments)}
+                      {getStopsWithAirports(inbound)}
                     </div>
                   </div>
 
                   {/* Arrival */}
                   <div className="text-right">
                     <div className="text-base font-bold">
-                      {offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.CityName} 
-                      ({offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.IATACode})
+                      {inbound[inbound.length - 1].Arrival.CityName} 
+                      ({inbound[inbound.length - 1].Arrival.IATACode})
                     </div>
                     <div className="text-4xl font-extrabold my-1">
-                      {formatTime(offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.ScheduledTime)}
+                      {formatTime(inbound[inbound.length - 1].Arrival.ScheduledTime)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.ScheduledTime)}
+                      {formatDate(inbound[inbound.length - 1].Arrival.ScheduledTime)}
                     </div>
                     <div className="mt-1">
-                      {offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.AirportName}
+                      {inbound[inbound.length - 1].Arrival.AirportName}
                     </div>
-                    {offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.Terminal && (
+                    {inbound[inbound.length - 1].Arrival.Terminal && (
                       <div className="text-sm text-muted-foreground">
-                        Terminal: {offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.Terminal}
+                        Terminal: {inbound[inbound.length - 1].Arrival.Terminal}
                       </div>
                     )}
                   </div>
@@ -927,20 +856,20 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     <div className="relative mb-6 pl-4">
                       <div>
                         <div className="text-base font-bold text-black dark:text-white text-lg">
-                          {offer.InboundSegments[0].Departure.CityName} ({offer.InboundSegments[0].Departure.IATACode})
+                          {inbound[0].Departure.CityName} ({inbound[0].Departure.IATACode})
                         </div>
                         <div className="text-3xl font-extrabold text-black dark:text-white">
-                          {formatTime(offer.InboundSegments[0].Departure.ScheduledTime)}
+                          {formatTime(inbound[0].Departure.ScheduledTime)}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {formatDate(offer.InboundSegments[0].Departure.ScheduledTime)}
+                          {formatDate(inbound[0].Departure.ScheduledTime)}
                         </div>
                         <div className="mt-1 text-sm">
-                          {offer.InboundSegments[0].Departure.AirportName}
+                          {inbound[0].Departure.AirportName}
                         </div>
-                        {offer.InboundSegments[0].Departure.Terminal && (
+                        {inbound[0].Departure.Terminal && (
                           <div className="text-sm text-muted-foreground">
-                            Terminal: {offer.InboundSegments[0].Departure.Terminal}
+                            Terminal: {inbound[0].Departure.Terminal}
                           </div>
                         )}
                       </div>
@@ -949,7 +878,7 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     {/* Duration info for mobile */}
                     <div className="relative mb-6 pl-4">
                       <div className="text-sm bg-gray-50 dark:bg-gray-900/20 px-3 py-2 rounded-md inline-block">
-                        {getStopsWithAirports(offer.InboundSegments)}
+                        {getStopsWithAirports(inbound)}
                       </div>
                     </div>
 
@@ -957,21 +886,21 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     <div className="relative pl-4">
                       <div>
                         <div className="text-base font-bold text-black dark:text-white text-lg">
-                          {offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.CityName}
-                          ({offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.IATACode})
+                          {inbound[inbound.length - 1].Arrival.CityName}
+                          ({inbound[inbound.length - 1].Arrival.IATACode})
                         </div>
                         <div className="text-3xl font-extrabold text-black dark:text-white">
-                          {formatTime(offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.ScheduledTime)}
+                          {formatTime(inbound[inbound.length - 1].Arrival.ScheduledTime)}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {formatDate(offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.ScheduledTime)}
+                          {formatDate(inbound[inbound.length - 1].Arrival.ScheduledTime)}
                         </div>
                         <div className="mt-1 text-sm">
-                          {offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.AirportName}
+                          {inbound[inbound.length - 1].Arrival.AirportName}
                         </div>
-                        {offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.Terminal && (
+                        {inbound[inbound.length - 1].Arrival.Terminal && (
                           <div className="text-sm text-muted-foreground">
-                            Terminal: {offer.InboundSegments[offer.InboundSegments.length - 1].Arrival.Terminal}
+                            Terminal: {inbound[inbound.length - 1].Arrival.Terminal}
                           </div>
                         )}
                       </div>
@@ -988,7 +917,7 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <div className="text-muted-foreground">Departure:</div>
-                    <div>{formatDate(offer.OutboundSegments[0].Departure.ScheduledTime)}</div>
+                    <div>{formatDate(outbound[0].Departure.ScheduledTime)}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <BaggageClaim className="w-4 h-4" />
@@ -1003,7 +932,7 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <div className="text-muted-foreground">Return:</div>
-                    <div>{formatDate(offer.InboundSegments[0].Departure.ScheduledTime)}</div>
+                    <div>{formatDate(inbound[0].Departure.ScheduledTime)}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <BaggageClaim className="w-4 h-4" />
@@ -1067,13 +996,13 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                 {/* Booking Class */}
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-green-600" />
-                  <span>Booking Class: {offer.OutboundSegments[0].RBD}</span>
+                  <span>Booking Class: {outbound[0].RBD}</span>
                 </div>
 
                 {/* Cabin Type */}
                 <div className="flex items-center gap-2">
                   <Armchair className="w-4 h-4 text-green-600" />
-                  <span>{offer.OutboundSegments[0].CabinType}</span>
+                  <span>{outbound[0].CabinType}</span>
                 </div>
 
                 {/* Seats Remaining */}
@@ -1091,8 +1020,9 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
               <div className="text-right mb-4">
                 <div className="text-3xl font-bold">
                   BDT {formatPrice(
-                    offer.Pricing.PriceBreakdown.Outbound.totalPayable.total +
-                    offer.Pricing.PriceBreakdown.Inbound.totalPayable.total
+                    selectedBrand?.upSellBrand?.price?.totalPayable?.total || 
+                    offer.Pricing.totalPayable?.total || 
+                    0
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">
