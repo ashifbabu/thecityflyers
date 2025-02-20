@@ -367,7 +367,6 @@ const FlightResultsPage = () => {
       // Log segments for debugging
       console.log('Parsed segments:', segments);
 
-      // Don't throw error, just return early if no segments
       if (segments.length === 0) {
         setError("Please select valid flight segments");
         setLoading(false);
@@ -394,11 +393,14 @@ const FlightResultsPage = () => {
         }
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/combined/search`, {
+      // Use relative URL to ensure it goes through our API route
+      const response = await fetch('/api/combined/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(requestBody)
       });
 
@@ -409,7 +411,6 @@ const FlightResultsPage = () => {
       const data = await response.json();
       const flights = data.flights || [];
       setFlightResults(flights);
-      // Sort flights with initial sort options
       const sortedResults = getSortedAndFilteredFlights(flights, sortOptions);
       setSortedFlights(sortedResults);
       sessionStorage.setItem("flightResults", JSON.stringify(flights));

@@ -68,6 +68,73 @@ interface UpSellBrand {
   }
 }
 
+// Add new interface for split pricing structure
+interface SplitPricing {
+  FareDetails: {
+    Outbound: Array<{
+      BaseFare: number;
+      Tax: number;
+      OtherFee: number;
+      Discount: number;
+      VAT: number;
+      Currency: string;
+      PaxType: string;
+      PaxCount: number;
+      SubTotal: number;
+    }>;
+    Inbound: Array<{
+      BaseFare: number;
+      Tax: number;
+      OtherFee: number;
+      Discount: number;
+      VAT: number;
+      Currency: string;
+      PaxType: string;
+      PaxCount: number;
+      SubTotal: number;
+    }>;
+  };
+  PriceBreakdown: {
+    Outbound: {
+      totalPayable: {
+        total: number;
+        currency: string;
+      };
+      gross?: {
+        total: number;
+        currency: string;
+      };
+      discount?: {
+        total: number;
+        currency: string;
+      };
+      totalVAT?: {
+        total: number;
+        currency: string;
+      };
+    };
+    Inbound: {
+      totalPayable: {
+        total: number;
+        currency: string;
+      };
+      gross?: {
+        total: number;
+        currency: string;
+      };
+      discount?: {
+        total: number;
+        currency: string;
+      };
+      totalVAT?: {
+        total: number;
+        currency: string;
+      };
+    };
+  };
+}
+
+// Update the ReturnFlightOffer interface
 interface ReturnFlightOffer {
   OfferId: string
   OutboundSegments: FlightSegment[]
@@ -84,21 +151,29 @@ interface ReturnFlightOffer {
     SubTotal: number
   }>
   Pricing: {
-    totalPayable: {
+    totalPayable?: {
       total: number
       currency: string
     }
-    gross: {
+    gross?: {
       total: number
       currency: string
     }
-    discount: {
+    discount?: {
       total: number
       currency: string
     }
-    totalVAT: {
+    totalVAT?: {
       total: number
       currency: string
+    }
+    FareDetails?: {
+      Outbound: any[]
+      Inbound: any[]
+    }
+    PriceBreakdown?: {
+      Outbound: any
+      Inbound: any
     }
   }
   Baggage: Array<{
@@ -555,6 +630,39 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
         ))}
       </div>
     );
+  };
+
+  // Add helper function to get total price
+  const getTotalPrice = (offer: ReturnFlightOffer): number => {
+    try {
+      // Check for selected brand price first
+      if (selectedBrand?.upSellBrand?.price?.totalPayable?.total) {
+        return selectedBrand.upSellBrand.price.totalPayable.total;
+      }
+
+      // Check for split pricing structure
+      if (offer.Pricing.PriceBreakdown) {
+        const outboundTotal = offer.Pricing.PriceBreakdown.Outbound?.totalPayable?.total || 0;
+        const inboundTotal = offer.Pricing.PriceBreakdown.Inbound?.totalPayable?.total || 0;
+        return outboundTotal + inboundTotal;
+      }
+
+      // Check for combined pricing structure
+      if (offer.Pricing.totalPayable?.total) {
+        return offer.Pricing.totalPayable.total;
+      }
+
+      // Calculate from fare details if available
+      if (offer.FareDetails?.length) {
+        return offer.FareDetails.reduce((total, fare) => total + (fare.SubTotal || 0), 0);
+      }
+
+      console.warn('No valid pricing structure found for offer:', offer);
+      return 0;
+    } catch (error) {
+      console.error('Error calculating total price:', error);
+      return 0;
+    }
   };
 
   return (
@@ -1021,8 +1129,7 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                 <div className="text-3xl font-bold">
                   BDT {formatPrice(
                     selectedBrand?.upSellBrand?.price?.totalPayable?.total || 
-                    offer.Pricing.totalPayable?.total || 
-                    0
+                    getTotalPrice(offer)
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">
