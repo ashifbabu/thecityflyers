@@ -168,7 +168,7 @@ const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButt
 
       requestBody = {
         pointOfSale: "BD",
-        source: "all", // Changed from "bdfare" to "all"
+        source: "bdfare", // Changed from "bdfare" to "all"
         request: {
           originDest,
           pax,
