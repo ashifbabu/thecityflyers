@@ -383,6 +383,8 @@ const FlightResultsPage = () => {
       }
     };
 
+    // updated
+
     console.log('Sending request with body:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch('/api/combined/search', {
