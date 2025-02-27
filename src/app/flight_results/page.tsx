@@ -355,74 +355,85 @@ const FlightResultsPage = () => {
     });
   };
   
-  const fetchFlights = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const segments = parseFlightSegments();
-      console.log('Sending request with segments:', segments);
+ const fetchFlights = async () => {
+  setLoading(true);
+  setError(null);
 
-      const requestBody = {
-        pointOfSale: "BD",
-        source: "bdfare",
-        request: {
-          originDest: segments.map(segment => ({
-            originDepRequest: { iatA_LocationCode: segment.fromCode, date: segment.date },
-            destArrivalRequest: { iatA_LocationCode: segment.toCode }
-          })),
-          pax: parsePassengers(),
-          shoppingCriteria: {
-            tripType: getApiTripType(searchParams?.get('tripType') as any),
-            travelPreferences: {
-              vendorPref: [],
-              cabinCode: searchParams?.get('class') || 'Economy'
-            },
-            returnUPSellInfo: true
-          }
+  try {
+    const segments = parseFlightSegments();
+    console.log('Sending request with segments:', segments);
+
+    const requestBody = {
+      pointOfSale: "BD",
+      source: "bdfare",
+      request: {
+        originDest: segments.map(segment => ({
+          originDepRequest: { iatA_LocationCode: segment.fromCode, date: segment.date },
+          destArrivalRequest: { iatA_LocationCode: segment.toCode }
+        })),
+        pax: parsePassengers(),
+        shoppingCriteria: {
+          tripType: getApiTripType(searchParams?.get('tripType') as any),
+          travelPreferences: {
+            vendorPref: [],
+            cabinCode: searchParams?.get('class') || 'Economy'
+          },
+          returnUPSellInfo: true
         }
-      };
+      }
+    };
 
-      console.log('Sending request with body:', JSON.stringify(requestBody, null, 2));
+    console.log('Sending request with body:', JSON.stringify(requestBody, null, 2));
 
-      const response = await fetch('/api/combined/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
+    const response = await fetch('/api/combined/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
 
+    // If the response is not OK, read the body once and parse as JSON or text
+    if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
-      if (!response.ok) {
-        try {
-          const errorData = await response.json();
-          console.error('Error response:', errorData);
-          errorMessage = errorData.error || errorData.details || errorMessage;
-        } catch (e) {
-          // If response is not JSON, try to get text
-          const errorText = await response.text();
-          console.error('Error response text:', errorText);
-          errorMessage = errorText || errorMessage;
-        }
-        throw new Error(errorMessage);
+      const rawBody = await response.text();  // <-- Read the body only once
+
+      try {
+        // Attempt to parse the raw body as JSON
+        const errorData = JSON.parse(rawBody);
+        console.error('Error response JSON:', errorData);
+        // If the JSON contains an `error` or `details` field, use it
+        errorMessage = errorData.error || errorData.details || errorMessage;
+      } catch (e) {
+        // If parsing fails, we treat it as text
+        console.error('Error response text:', rawBody);
+        errorMessage = rawBody || errorMessage;
       }
 
-      const data = await response.json();
-      console.log('Received response:', data);
-
-      const flights = data.flights || [];
-      setFlightResults(flights);
-      const sortedResults = getSortedAndFilteredFlights(flights, sortOptions);
-      setSortedFlights(sortedResults);
-    } catch (error) {
-      console.error('Error fetching flights:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch flight results');
-      setFlightResults([]);
-      setSortedFlights([]);
-    } finally {
-      setLoading(false);
+      throw new Error(errorMessage);
     }
-  };
+
+    // If the response is OK, parse JSON normally
+    const data = await response.json();
+    console.log('Received response:', data);
+
+    const flights = data.flights || [];
+    setFlightResults(flights);
+
+    // Sort/filter if needed
+    const sortedResults = getSortedAndFilteredFlights(flights, sortOptions);
+    setSortedFlights(sortedResults);
+
+  } catch (error) {
+    console.error('Error fetching flights:', error);
+    setError(error instanceof Error ? error.message : 'Failed to fetch flight results');
+    setFlightResults([]);
+    setSortedFlights([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const updateSearchParams = (type: 'departure' | 'return', date: Date) => {
     const params = new URLSearchParams(searchParams.toString());
