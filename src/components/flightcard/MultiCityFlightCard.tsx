@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -48,6 +48,10 @@ interface Pricing {
         currency: string;
       };
     };
+  };
+  totalPayable: {
+    total: number;
+    currency: string;
   };
 }
 
@@ -385,6 +389,24 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
   const [selectedBrand, setSelectedBrand] = useState<UpSellBrand | null>(null);
   const [activeTab, setActiveTab] = useState<"flight-details" | "fare-summary" | "baggage" | null>(null);
 
+
+useEffect(() => {
+  if (multiCityOffer.UpSellBrandList && multiCityOffer.UpSellBrandList.length > 0) {
+    const defaultBrand = multiCityOffer.UpSellBrandList[0];
+    setSelectedBrand(defaultBrand);
+    setSelectedFare(defaultBrand.upSellBrand.brandName);
+  }
+}, [multiCityOffer.UpSellBrandList]);
+
+useEffect(() => {
+  console.log("Outbound Price:", multiCityOffer.Pricing?.PriceBreakdown?.Outbound?.totalPayable?.total);
+  console.log("Inbound Price:", multiCityOffer.Pricing?.PriceBreakdown?.Inbound?.totalPayable?.total);
+}, [multiCityOffer.Pricing]);
+
+useEffect(() => {
+  console.log("Pricing object:", multiCityOffer.Pricing);
+}, [multiCityOffer.Pricing]);
+
   // Add this function to handle brand selection
   const handleBrandSelect = (value: string) => {
     setSelectedFare(value);
@@ -414,16 +436,20 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
   );
 
   // Get price display
-  const getPriceBreakdown = () => {
-    const outboundTotal = multiCityOffer.Pricing?.PriceBreakdown?.Outbound?.totalPayable?.total || 0;
-    const inboundTotal = multiCityOffer.Pricing?.PriceBreakdown?.Inbound?.totalPayable?.total || 0;
-    const currency = multiCityOffer.Pricing?.PriceBreakdown?.Outbound?.totalPayable?.currency || 'BDT';
-    
-    return {
-      currency,
-      total: outboundTotal + inboundTotal
-    };
-  };
+const getPriceBreakdown = () => {
+  const total = multiCityOffer.Pricing?.totalPayable?.total || 0;
+  const currency = multiCityOffer.Pricing?.totalPayable?.currency || 'BDT';
+  return { total, currency };
+};
+
+
+
+
+
+const priceBreakdown = getPriceBreakdown();
+const totalPrice = selectedBrand?.upSellBrand.price.totalPayable.total || priceBreakdown.total;
+const currency = selectedBrand?.upSellBrand.price.totalPayable.currency || priceBreakdown.currency;
+
 
   // Add this before the return statement to render the active tab content
   const renderTabContent = () => {
@@ -590,16 +616,15 @@ const MultiCityFlightCard: React.FC<{ multiCityOffer: MultiCityOffer }> = ({ mul
             </div>
 
             {/* Price and Action */}
-            <div className="mt-6 text-right">
-              <div className="text-3xl font-bold">
-                {selectedBrand?.upSellBrand.price.totalPayable.currency || "BDT"}{" "}
-                {formatPrice(selectedBrand?.upSellBrand.price.totalPayable.total || 0)}
-              </div>
-              <div className="text-sm text-muted-foreground mb-4">Price per adult</div>
-              <Button className="w-full">
-                Select <ChevronRight className="ml-2 w-4 h-4" />
-              </Button>
-            </div>
+<div className="mt-6 text-right">
+  <div className="text-3xl font-bold">
+    {currency} {formatPrice(totalPrice)}
+  </div>
+  <div className="text-sm text-muted-foreground mb-4">Total Price</div>
+  <Button className="w-full">
+    Select <ChevronRight className="ml-2 w-4 h-4" />
+  </Button>
+</div>
           </div>
         </div>
 
