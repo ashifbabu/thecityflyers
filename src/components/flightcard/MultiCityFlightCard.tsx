@@ -398,14 +398,11 @@ useEffect(() => {
   }
 }, [multiCityOffer.UpSellBrandList]);
 
-useEffect(() => {
-  console.log("Outbound Price:", multiCityOffer.Pricing?.PriceBreakdown?.Outbound?.totalPayable?.total);
-  console.log("Inbound Price:", multiCityOffer.Pricing?.PriceBreakdown?.Inbound?.totalPayable?.total);
-}, [multiCityOffer.Pricing]);
 
-useEffect(() => {
-  console.log("Pricing object:", multiCityOffer.Pricing);
-}, [multiCityOffer.Pricing]);
+
+// useEffect(() => {
+//   console.log("Pricing object:", multiCityOffer.Pricing);
+// }, [multiCityOffer.Pricing]);
 
   // Add this function to handle brand selection
   const handleBrandSelect = (value: string) => {

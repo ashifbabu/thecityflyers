@@ -385,9 +385,10 @@ const FlightResultsPage = () => {
 
     // updated
 
-    console.log('Sending request with body:', JSON.stringify(requestBody, null, 2));
+    console.log('Sending request with body updated:', JSON.stringify(requestBody, null, 2));
 
-    const response = await fetch('/api/combined/search', {
+     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(`${apiUrl}/api/combined/search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
