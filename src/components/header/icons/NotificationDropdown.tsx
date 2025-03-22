@@ -40,18 +40,23 @@ const NotificationDropdown = ({ isOpen, onClose }: NotificationDropdownProps) =>
     <div 
       ref={ref}
       className={cn(
-        "absolute right-0 mt-2 w-80 max-h-[calc(100vh-80px)]",
+        "absolute right-0 top-[60px] md:top-auto md:mt-2",
+        "w-[280px] max-h-[calc(100vh-80px)]",
         "bg-white dark:bg-gray-800",
         "border border-gray-200 dark:border-gray-700",
         "rounded-lg shadow-lg",
         "z-50 transform origin-top-right transition-all",
-        "overflow-hidden"
+        "overflow-hidden",
+        "mx-4 md:mx-0"
       )}
+      style={{
+        maxHeight: 'calc(100vh - 80px)'
+      }}
       role="dialog"
       aria-labelledby="notification-dropdown-title"
       aria-describedby="notification-dropdown-description"
     >
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="sticky top-0 p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <h3 id="notification-dropdown-title" className="text-lg font-semibold text-gray-900 dark:text-white">
           Notifications
         </h3>

@@ -220,7 +220,9 @@ const SearchButton = ({ onError, searchData, buttonText = 'Search' }: SearchButt
       className={cn(
         'w-full max-w-xs mx-auto rounded-md',
         'transition-all duration-200 flex items-center justify-center font-medium py-4 px-8',
-        loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-900'
+        loading 
+          ? 'bg-gray-400 cursor-not-allowed dark:bg-gray-600' 
+          : 'bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200'
       )}
     >
       {loading ? 'Searching...' : buttonText}

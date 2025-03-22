@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,9 +13,18 @@ import { FaApple } from 'react-icons/fa';
 type AuthMode = 'signin' | 'signup';
 
 export default function AuthPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<AuthMode>('signin');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  useEffect(() => {
+    const urlMode = searchParams?.get('mode');
+    if (urlMode === 'signin' || urlMode === 'signup') {
+      setMode(urlMode);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +32,66 @@ export default function AuthPage() {
     // Add authentication logic here
     setTimeout(() => setLoading(false), 1000);
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    // Add forgot password logic here
+    setTimeout(() => {
+      setLoading(false);
+      setShowForgotPassword(false);
+    }, 1000);
+  };
+
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight">Reset Password</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              Enter your email address and we'll send you a link to reset your password
+            </p>
+          </div>
+
+          <form onSubmit={handleForgotPassword} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="name@example.com" 
+                required 
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                  Sending reset link...
+                </div>
+              ) : (
+                'Send Reset Link'
+              )}
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(false)}
+              className="w-full text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            >
+              Back to Sign In
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
@@ -139,6 +208,18 @@ export default function AuthPage() {
               required 
             />
           </div>
+
+          {mode === 'signin' && (
+            <div className="text-sm text-right">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-primary hover:text-primary/80"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           <Button 
             type="submit" 

@@ -20,9 +20,9 @@ const IconButton: React.FC<IconButtonProps> = ({
       aria-label={ariaLabel} 
       className={cn(
         "p-2 rounded-full transition-colors",
-        "hover:bg-gray-100 dark:hover:bg-gray-700",
-        "focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400",
-        "active:bg-gray-200 dark:active:bg-gray-600",
+        "hover:bg-gray-100 dark:hover:bg-gray-800",
+        "focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600",
+        "active:bg-gray-200 dark:active:bg-gray-700",
         className
       )}
     >
