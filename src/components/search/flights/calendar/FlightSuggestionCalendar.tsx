@@ -13,8 +13,32 @@ interface FlightSuggestionCalendarProps {
   maxDate?: Date;
   prices?: Record<string, number>;
   className?: string;
-  lowestFare?: number;
+  isLoading?: boolean;
+  loadingDate?: string | null;
+  onNavigate?: (direction: 'prev' | 'next', dates: Date[]) => void;
 }
+
+const getFareComparisonColor = (currentFare: number, selectedFare: number) => {
+  if (!currentFare || !selectedFare) return '';
+
+  const percentageDiff = ((currentFare - selectedFare) / selectedFare) * 100;
+
+  // Lower fares (green shades)
+  if (percentageDiff <= -20) return 'text-green-600 font-bold';
+  if (percentageDiff <= -15) return 'text-green-600';
+  if (percentageDiff <= -10) return 'text-green-500';
+  if (percentageDiff <= -5) return 'text-green-500';
+  if (percentageDiff < 0) return 'text-green-400';
+
+  // Higher fares (orange shades)
+  if (percentageDiff >= 20) return 'text-orange-600 font-bold';
+  if (percentageDiff >= 15) return 'text-orange-600';
+  if (percentageDiff >= 10) return 'text-orange-500';
+  if (percentageDiff >= 5) return 'text-orange-500';
+  
+  // Similar fare (neutral)
+  return 'text-gray-600 dark:text-gray-300';
+};
 
 const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
   selectedDate = new Date(),
@@ -23,12 +47,18 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
   maxDate,
   prices = {},
   className,
-  lowestFare,
+  isLoading = false,
+  loadingDate = null,
+  onNavigate,
 }) => {
   const { tripType } = useTripType();
   const [currentDate, setCurrentDate] = useState(selectedDate);
   const [visibleDates, setVisibleDates] = useState<Date[]>([]);
   const [displayCount, setDisplayCount] = useState(7);
+
+  // Get selected date's fare
+  const selectedDateKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
+  const selectedFare = prices[selectedDateKey];
 
   useEffect(() => {
     const updateDisplayCount = () => {
@@ -64,6 +94,18 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
   const navigateCalendar = (direction: 'prev' | 'next') => {
     const newDate = addDays(currentDate, direction === 'prev' ? -displayCount : displayCount);
     setCurrentDate(newDate);
+    
+    // Calculate the new visible dates
+    const dates: Date[] = [];
+    const offset = Math.floor(displayCount / 2);
+    const startDate = addDays(newDate, -offset);
+    
+    for (let i = 0; i < displayCount; i++) {
+      dates.push(addDays(startDate, i));
+    }
+    
+    // Notify parent component about navigation
+    onNavigate?.(direction, dates);
   };
 
   const formatPrice = (price: number) => {
@@ -91,6 +133,7 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
           onClick={() => navigateCalendar('prev')}
           className="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
           aria-label="Previous dates"
+          disabled={isLoading}
         >
           <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" />
         </button>
@@ -102,8 +145,13 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
           {visibleDates.map((date) => {
             const isSelected = selectedDate && isSameDay(date, selectedDate);
             const dateKey = format(date, 'yyyy-MM-dd');
-            const price = prices[dateKey] || 20856;
+            const price = prices[dateKey];
             const isDisabled = isDateDisabled(date);
+            const isDateLoading = loadingDate === dateKey;
+            
+            // Get color based on fare comparison
+            const fareComparisonColor = isSelected ? 'text-white dark:text-gray-900' : 
+              (price && selectedFare) ? getFareComparisonColor(price, selectedFare) : '';
             
             return (
               <button
@@ -117,11 +165,12 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
                   "hover:bg-gray-100 dark:hover:bg-gray-800",
                   isSelected 
                     ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900" 
-                    : "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100",
+                    : "bg-white dark:bg-gray-900",
                   "border border-gray-200 dark:border-gray-700",
-                  isDisabled && "opacity-50 cursor-not-allowed"
+                  (isDisabled || isLoading) && "opacity-50 cursor-not-allowed",
+                  isDateLoading && "animate-pulse"
                 )}
-                disabled={isDisabled}
+                disabled={isDisabled || isLoading}
               >
                 <span className="text-xs sm:text-sm font-medium">
                   {format(date, 'MMM d')}
@@ -130,15 +179,24 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
                   {format(date, 'EEE')}
                 </span>
                 <span className={cn(
-                  "text-[10px] sm:text-xs mt-0.5 sm:mt-1",
-                  isSelected 
-                    ? "text-white dark:text-gray-900" 
-                    : "text-gray-900 dark:text-gray-100"
+                  "text-sm sm:text-base mt-1",
+                  "font-semibold",
+                  fareComparisonColor
                 )}>
-                  {isSelected && lowestFare 
-                    ? formatPrice(lowestFare)
-                    : "View fare"}
+                  {isDateLoading ? (
+                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                  ) : (
+                    price ? formatPrice(price) : "View fare"
+                  )}
                 </span>
+                {price && selectedFare && !isSelected && !isDateLoading && (
+                  <span className={cn(
+                    "text-[9px] mt-0.5",
+                    price < selectedFare ? "text-green-600" : "text-orange-600"
+                  )}>
+                    {((price - selectedFare) / selectedFare * 100).toFixed(0)}%
+                  </span>
+                )}
               </button>
             );
           })}
@@ -148,6 +206,7 @@ const FlightSuggestionCalendar: React.FC<FlightSuggestionCalendarProps> = ({
           onClick={() => navigateCalendar('next')}
           className="p-1 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
           aria-label="Next dates"
+          disabled={isLoading}
         >
           <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" />
         </button>

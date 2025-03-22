@@ -554,8 +554,7 @@ const FlightResultsPage = () => {
         returnDate={returnDate || undefined}
         onDepartureDateSelect={handleDepartureDateSelect}
         onReturnDateSelect={handleReturnDateSelect}
-        lowestDepartureFare={getLowestFare(flightResults.filter(f => !f.isReturn))}
-        lowestReturnFare={getLowestFare(flightResults.filter(f => f.isReturn))}
+        flightResults={flightResults}
       />
 
       <FlightSortingOptions
