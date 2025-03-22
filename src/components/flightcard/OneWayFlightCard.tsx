@@ -452,9 +452,6 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                   <div className="text-sm text-muted-foreground">
                     {formatDate(offer.OutboundSegments[0].Departure.ScheduledTime)}
                   </div>
-                  <div className="mt-1">
-                    {offer.OutboundSegments[0].Departure.AirportName}
-                  </div>
                   {offer.OutboundSegments[0].Departure.Terminal && (
                     <div className="text-sm text-muted-foreground">
                       Terminal: {offer.OutboundSegments[0].Departure.Terminal}
@@ -486,9 +483,6 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {formatDate(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
-                  </div>
-                  <div className="mt-1">
-                    {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.AirportName}
                   </div>
                   {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal && (
                     <div className="text-sm text-muted-foreground">
@@ -533,9 +527,6 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                       <div className="text-sm text-muted-foreground">
                         {formatDate(offer.OutboundSegments[0].Departure.ScheduledTime)}
                       </div>
-                      <div className="mt-1 text-sm">
-                        {offer.OutboundSegments[0].Departure.AirportName}
-                      </div>
                       {offer.OutboundSegments[0].Departure.Terminal && (
                         <div className="text-sm text-muted-foreground">
                           Terminal: {offer.OutboundSegments[0].Departure.Terminal}
@@ -564,9 +555,6 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                       <div className="text-sm text-muted-foreground">
                         {formatDate(offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.ScheduledTime)}
                       </div>
-                      <div className="mt-1 text-sm">
-                        {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.AirportName}
-                      </div>
                       {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal && (
                         <div className="text-sm text-muted-foreground">
                           Terminal: {offer.OutboundSegments[offer.OutboundSegments.length - 1].Arrival.Terminal}
@@ -585,7 +573,7 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
                   <BaggageClaim className="w-4 h-4" />
                   {offer.Baggage[0].CheckIn[0]?.allowance || '20kg'}
                 </div>
-                <div className="text-green-600">
+                <div className={offer.Refundable ? "text-green-600" : "text-red-600"}>
                   {offer.Refundable ? 'Refundable' : 'Non-Refundable'}
                 </div>
               </div>
@@ -696,7 +684,7 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
               </div>
               <Button 
                 size="lg" 
-                className="w-full bg-black text-white hover:bg-black/90"
+                className="w-full bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
               >
                 Select <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
@@ -712,27 +700,27 @@ const OneWayFlightCard: React.FC<OneWayFlightCardProps> = ({ offer, totalPasseng
               active={activeTab === "flight-details"}
               onClick={() => setActiveTab(activeTab === "flight-details" ? null : "flight-details")}
               icon={<Plane className="h-4 w-4" />}
-              label="Flight Details"
+              label={<span className="text-base">Flight Details</span>}
               showChevron
             />
             <TabButton
               active={activeTab === "fare-summary"}
               onClick={() => setActiveTab(activeTab === "fare-summary" ? null : "fare-summary")}
               icon={<Receipt className="h-4 w-4" />}
-              label="Fare Summary"
+              label={<span className="text-base">Fare Summary</span>}
               showChevron
             />
             <TabButton
               active={activeTab === "baggage"}
               onClick={() => setActiveTab(activeTab === "baggage" ? null : "baggage")}
               icon={<Luggage className="h-4 w-4" />}
-              label="Baggage"
+              label={<span className="text-base">Baggage</span>}
               showChevron
             />
           </div>
 
           {/* Tab Content - Improved Responsiveness */}
-          <div className="relative mt-4 overflow-x-auto">
+          <div className="relative mt-3 overflow-x-auto max-h-[400px] overflow-y-auto">
             <div className="min-w-full">
               {activeTab === 'flight-details' && renderFlightDetails()}
               {activeTab === 'fare-summary' && renderFareSummary()}
@@ -756,7 +744,7 @@ const TabButton = ({
   active: boolean
   onClick: () => void
   icon: React.ReactNode
-  label: string
+  label: React.ReactNode
   showChevron?: boolean
 }) => (
   <button

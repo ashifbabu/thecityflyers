@@ -127,9 +127,11 @@ const TripSegment: React.FC<{ segments: Segment[]; tripNumber: number }> = ({ se
             <div className="font-bold text-lg">
               {firstSegment.Departure.CityName} ({firstSegment.Departure.IATACode})
             </div>
-            <div className="text-sm text-muted-foreground">{firstSegment.Departure.AirportName}</div>
             <div className="text-3xl font-bold mt-2">{formatDate(firstSegment.Departure.ScheduledTime).time}</div>
             <div className="text-sm text-muted-foreground">{formatDate(firstSegment.Departure.ScheduledTime).date}</div>
+            {firstSegment.Departure.Terminal && (
+              <div className="text-sm text-muted-foreground">Terminal: {firstSegment.Departure.Terminal}</div>
+            )}
           </div>
 
           {/* Duration */}
@@ -157,9 +159,11 @@ const TripSegment: React.FC<{ segments: Segment[]; tripNumber: number }> = ({ se
             <div className="font-bold text-lg">
               {lastSegment.Arrival.CityName} ({lastSegment.Arrival.IATACode})
             </div>
-            <div className="text-sm text-muted-foreground">{lastSegment.Arrival.AirportName}</div>
             <div className="text-3xl font-bold mt-2">{formatDate(lastSegment.Arrival.ScheduledTime).time}</div>
             <div className="text-sm text-muted-foreground">{formatDate(lastSegment.Arrival.ScheduledTime).date}</div>
+            {lastSegment.Arrival.Terminal && (
+              <div className="text-sm text-muted-foreground">Terminal: {lastSegment.Arrival.Terminal}</div>
+            )}
           </div>
         </div>
       </div>
@@ -190,7 +194,7 @@ const FlightDetailsTab: React.FC<{ segments: Segment[] }> = ({ segments }) => {
               <div className="font-medium">{formatDate(segment.Departure.ScheduledTime).time}</div>
               <div className="text-sm">{formatDate(segment.Departure.ScheduledTime).date}</div>
               <div className="text-sm text-muted-foreground mt-1">
-                {segment.Departure.AirportName} ({segment.Departure.IATACode})
+                {segment.Departure.CityName} ({segment.Departure.IATACode})
                 {segment.Departure.Terminal && ` • Terminal ${segment.Departure.Terminal}`}
               </div>
             </div>
@@ -200,7 +204,7 @@ const FlightDetailsTab: React.FC<{ segments: Segment[] }> = ({ segments }) => {
               <div className="font-medium">{formatDate(segment.Arrival.ScheduledTime).time}</div>
               <div className="text-sm">{formatDate(segment.Arrival.ScheduledTime).date}</div>
               <div className="text-sm text-muted-foreground mt-1">
-                {segment.Arrival.AirportName} ({segment.Arrival.IATACode})
+                {segment.Arrival.CityName} ({segment.Arrival.IATACode})
                 {segment.Arrival.Terminal && ` • Terminal ${segment.Arrival.Terminal}`}
               </div>
             </div>
@@ -304,14 +308,14 @@ const FareSummaryTab: React.FC<{
               <div className="flex items-center justify-between">
                 <span className="text-sm">Exchange</span>
                 <span className="text-sm font-medium">
-                  {selectedBrand.upSellBrand.exchangeAllowed ? "Allowed" : "Not Allowed"}
+                  {selectedBrand.upSellBrand.exchangeAllowed ? "Exchangeable" : "Non-Exchangeable"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-sm">Refund</span>
-                <span className="text-sm font-medium">
-                  {selectedBrand.upSellBrand.refundAllowed ? "Allowed" : "Not Allowed"}
+                <span className={`text-sm ${selectedBrand.upSellBrand.refundAllowed ? "text-green-600" : "text-red-600"}`}>
+                  {selectedBrand.upSellBrand.refundAllowed ? "Refundable" : "Non-Refundable"}
                 </span>
               </div>
             </div>
@@ -488,8 +492,8 @@ const currency = selectedBrand?.upSellBrand.price.totalPayable.currency || price
                 </div>
               </div>
               {multiCityOffer.Refundable && (
-                <span className="ml-auto text-green-500 text-sm bg-green-50 dark:bg-green-950/50 px-2 py-1 rounded">
-                  Refundable
+                <span className={`ml-auto ${multiCityOffer.Refundable ? "text-green-600 bg-green-50 dark:bg-green-950/50" : "text-red-600 bg-red-50 dark:bg-red-950/50"} text-sm px-2 py-1 rounded`}>
+                  {multiCityOffer.Refundable ? "Refundable" : "Non-Refundable"}
                 </span>
               )}
             </div>
@@ -605,7 +609,7 @@ const currency = selectedBrand?.upSellBrand.price.totalPayable.currency || price
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">
+                  <span className={`text-sm ${selectedBrand?.upSellBrand.refundAllowed ? "text-green-600" : "text-red-600"}`}>
                     {selectedBrand?.upSellBrand.refundAllowed ? "Refundable" : "Non-Refundable"}
                   </span>
                 </div>
@@ -619,7 +623,9 @@ const currency = selectedBrand?.upSellBrand.price.totalPayable.currency || price
   </div>
   <div className="text-sm text-muted-foreground mb-4">Total Price</div>
   <Button className="w-full">
-    Select <ChevronRight className="ml-2 w-4 h-4" />
+    <span className="flex items-center justify-center w-full bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 py-2 rounded-md">
+      Select <ChevronRight className="ml-2 w-4 h-4" />
+    </span>
   </Button>
 </div>
           </div>
@@ -631,27 +637,29 @@ const currency = selectedBrand?.upSellBrand.price.totalPayable.currency || price
             <Button
               variant={activeTab === "flight-details" ? "default" : "ghost"}
               onClick={() => setActiveTab(activeTab === "flight-details" ? null : "flight-details")}
-              className="gap-2"
+              className="gap-2 text-base"
             >
               <Plane className="w-4 h-4" /> Flight Details
             </Button>
             <Button
               variant={activeTab === "fare-summary" ? "default" : "ghost"}
               onClick={() => setActiveTab(activeTab === "fare-summary" ? null : "fare-summary")}
-              className="gap-2"
+              className="gap-2 text-base"
             >
               Fare Summary
             </Button>
             <Button
               variant={activeTab === "baggage" ? "default" : "ghost"}
               onClick={() => setActiveTab(activeTab === "baggage" ? null : "baggage")}
-              className="gap-2"
+              className="gap-2 text-base"
             >
               Baggage
             </Button>
           </div>
           {/* Add the tab content */}
-          {renderTabContent()}
+          <div className="max-h-[400px] overflow-y-auto mt-3">
+            {renderTabContent()}
+          </div>
         </div>
       </CardContent>
     </Card>

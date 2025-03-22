@@ -711,9 +711,6 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     <div className="text-sm text-muted-foreground">
                       {formatDate(outbound[0].Departure.ScheduledTime)}
                     </div>
-                    <div className="mt-1">
-                      {outbound[0].Departure.AirportName}
-                    </div>
                     {outbound[0].Departure.Terminal && (
                       <div className="text-sm text-muted-foreground">
                         Terminal: {outbound[0].Departure.Terminal}
@@ -745,9 +742,6 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {formatDate(outbound[outbound.length - 1].Arrival.ScheduledTime)}
-                    </div>
-                    <div className="mt-1">
-                      {outbound[outbound.length - 1].Arrival.AirportName}
                     </div>
                     {outbound[outbound.length - 1].Arrival.Terminal && (
                       <div className="text-sm text-muted-foreground">
@@ -792,9 +786,6 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                         <div className="text-sm text-muted-foreground">
                           {formatDate(outbound[0].Departure.ScheduledTime)}
                         </div>
-                        <div className="mt-1 text-sm">
-                          {outbound[0].Departure.AirportName}
-                        </div>
                         {outbound[0].Departure.Terminal && (
                           <div className="text-sm text-muted-foreground">
                             Terminal: {outbound[0].Departure.Terminal}
@@ -822,9 +813,6 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {formatDate(outbound[outbound.length - 1].Arrival.ScheduledTime)}
-                        </div>
-                        <div className="mt-1 text-sm">
-                          {outbound[outbound.length - 1].Arrival.AirportName}
                         </div>
                         {outbound[outbound.length - 1].Arrival.Terminal && (
                           <div className="text-sm text-muted-foreground">
@@ -891,9 +879,6 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     <div className="text-sm text-muted-foreground">
                       {formatDate(inbound[0].Departure.ScheduledTime)}
                     </div>
-                    <div className="mt-1">
-                      {inbound[0].Departure.AirportName}
-                    </div>
                     {inbound[0].Departure.Terminal && (
                       <div className="text-sm text-muted-foreground">
                         Terminal: {inbound[0].Departure.Terminal}
@@ -925,9 +910,6 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {formatDate(inbound[inbound.length - 1].Arrival.ScheduledTime)}
-                    </div>
-                    <div className="mt-1">
-                      {inbound[inbound.length - 1].Arrival.AirportName}
                     </div>
                     {inbound[inbound.length - 1].Arrival.Terminal && (
                       <div className="text-sm text-muted-foreground">
@@ -972,9 +954,6 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                         <div className="text-sm text-muted-foreground">
                           {formatDate(inbound[0].Departure.ScheduledTime)}
                         </div>
-                        <div className="mt-1 text-sm">
-                          {inbound[0].Departure.AirportName}
-                        </div>
                         {inbound[0].Departure.Terminal && (
                           <div className="text-sm text-muted-foreground">
                             Terminal: {inbound[0].Departure.Terminal}
@@ -1003,9 +982,6 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                         <div className="text-sm text-muted-foreground">
                           {formatDate(inbound[inbound.length - 1].Arrival.ScheduledTime)}
                         </div>
-                        <div className="mt-1 text-sm">
-                          {inbound[inbound.length - 1].Arrival.AirportName}
-                        </div>
                         {inbound[inbound.length - 1].Arrival.Terminal && (
                           <div className="text-sm text-muted-foreground">
                             Terminal: {inbound[inbound.length - 1].Arrival.Terminal}
@@ -1031,7 +1007,7 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     <BaggageClaim className="w-4 h-4" />
                     {getBaggageAllowance()}
                   </div>
-                  <div className="text-green-600">
+                  <div className={offer.Refundable ? "text-green-600" : "text-red-600"}>
                     {offer.Refundable ? 'Refundable' : 'Non-Refundable'}
                   </div>
                 </div>
@@ -1046,7 +1022,7 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
                     <BaggageClaim className="w-4 h-4" />
                     {getBaggageAllowance()}
                   </div>
-                  <div className="text-green-600">
+                  <div className={offer.Refundable ? "text-green-600" : "text-red-600"}>
                     {offer.Refundable ? 'Refundable' : 'Non-Refundable'}
                   </div>
                 </div>
@@ -1138,7 +1114,7 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
               </div>
               <Button 
                 size="lg" 
-                className="w-full bg-black text-white hover:bg-black/90"
+                className="w-full bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
               >
                 Select <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
@@ -1154,27 +1130,27 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
               active={activeTab === "flight-details"}
               onClick={() => setActiveTab(activeTab === "flight-details" ? null : "flight-details")}
               icon={<Plane className="h-4 w-4" />}
-              label="Flight Details"
+              label={<span className="text-base">Flight Details</span>}
               showChevron
             />
             <TabButton
               active={activeTab === "fare-summary"}
               onClick={() => setActiveTab(activeTab === "fare-summary" ? null : "fare-summary")}
               icon={<Receipt className="h-4 w-4" />}
-              label="Fare Summary"
+              label={<span className="text-base">Fare Summary</span>}
               showChevron
             />
             <TabButton
               active={activeTab === "baggage"}
               onClick={() => setActiveTab(activeTab === "baggage" ? null : "baggage")}
               icon={<Luggage className="h-4 w-4" />}
-              label="Baggage"
+              label={<span className="text-base">Baggage</span>}
               showChevron
             />
           </div>
 
           {/* Tab Content - Improved Responsiveness */}
-          <div className="relative mt-4 overflow-x-auto">
+          <div className="relative mt-3 overflow-x-auto max-h-[400px] overflow-y-auto">
             <div className="min-w-full">
               {activeTab === 'flight-details' && renderFlightDetails()}
               {activeTab === 'fare-summary' && renderFareSummary()}
@@ -1198,7 +1174,7 @@ const TabButton = ({
   active: boolean
   onClick: () => void
   icon: React.ReactNode
-  label: string
+  label: React.ReactNode
   showChevron?: boolean
 }) => (
   <button
