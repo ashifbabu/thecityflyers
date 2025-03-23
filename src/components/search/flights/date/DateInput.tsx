@@ -26,11 +26,31 @@ const DateInput: React.FC<DateInputProps> = ({
 }) => {
   const { tripType } = useTripType();
   const [showCalendar, setShowCalendar] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(
+    type === 'return' && departureDate ? departureDate : new Date()
+  );
   const containerRef = useRef<HTMLDivElement>(null);
 
   const today = startOfDay(new Date());
   const minSelectableDate = addDays(today, 0);
+
+  // Update current month when departure date changes for return calendar
+  useEffect(() => {
+    if (type === 'return' && departureDate) {
+      setCurrentMonth(departureDate);
+    }
+  }, [type, departureDate]);
+
+  // Update current month when calendar opens
+  useEffect(() => {
+    if (showCalendar) {
+      if (type === 'return' && departureDate) {
+        setCurrentMonth(departureDate);
+      } else if (selectedDate) {
+        setCurrentMonth(selectedDate);
+      }
+    }
+  }, [showCalendar, type, departureDate, selectedDate]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
