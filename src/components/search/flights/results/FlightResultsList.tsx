@@ -1,29 +1,39 @@
 'use client';
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import FlightCard from '@/components/flightcard/FlightCard';
 import MultiCityFlightCard from '@/components/flightcard/MultiCityFlightCard';
 import OneWayFlightCard from '@/components/flightcard/OneWayFlightCard';
 import ReturnFlightCard from '@/components/flightcard/ReturnFlightCard';
+import FlightLoadingSkeleton from './FlightLoadingSkeleton';
 
 interface FlightResultsListProps {
   flights: any[];
+  isLoading?: boolean;
 }
 
-const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
+const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights, isLoading = false }) => {
   const searchParams = useSearchParams();
   const tripType = searchParams?.get('tripType');
   const totalPassengers = parseInt(searchParams.get('passengers') || '1', 10);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Show loading state during transitions
+  useEffect(() => {
+    if (isLoading) {
+      setIsTransitioning(true);
+      const timer = setTimeout(() => setIsTransitioning(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   // Calculate summary statistics
   const summary = useMemo(() => {
     if (!Array.isArray(flights)) return { flightCount: 0, airlineCount: 0 };
 
-    // Get unique airlines
     const uniqueAirlines = new Set(
       flights.map(flight => {
-        // For multi-city or return flights, check all segments
         const segments = [
           ...(flight.OutboundSegments || []),
           ...(flight.InboundSegments || [])
@@ -38,15 +48,9 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
     };
   }, [flights]);
 
-  // Instead of creating new fare objects, use the fare directly from the flight
-  const flightFares = flights.map(flight => ({
-    id: flight.OfferId,
-    fare: flight.fare // Use the fare we calculated in getSortedAndFilteredFlights
-  }));
-
-  console.log('Flight fares:', flightFares);
-
-  console.log('Rendering FlightResultsList with flights:', flights.slice(0, 3));
+  if (isLoading || isTransitioning) {
+    return <FlightLoadingSkeleton />;
+  }
 
   if (!Array.isArray(flights)) {
     return (
@@ -68,13 +72,6 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights }) => {
         {flights.map((flight, index) => {
           if (!flight) return null;
 
-          // Debug log for each flight's fare
-          console.log(`Flight ${index} fare:`, {
-            id: flight.OfferId,
-            fare: flight.fare
-          });
-
-          // Use appropriate card based on trip type
           switch(tripType) {
             case 'multiCity':
               return (

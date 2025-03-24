@@ -136,29 +136,23 @@ const FlightResultsPage = () => {
     }
 
     try {
-      // First try to get fare from totalAmount
       if (flight.totalAmount) {
         return parseFloat(flight.totalAmount);
       }
 
-      // Try to get from Price field
       if (flight.Price) {
         return parseFloat(flight.Price);
       }
 
-      // Try to get from simple fare structure
       if (flight.fare) {
         return parseFloat(flight.fare);
       }
 
-      // Try to get from detailed pricing structure
       if (flight.Pricing) {
-        // Try totalPayable first
         if (flight.Pricing.totalPayable?.total) {
           return parseFloat(flight.Pricing.totalPayable.total);
         }
 
-        // Try BaseFare + Taxes
         if (flight.Pricing.BaseFare) {
           let total = parseFloat(flight.Pricing.BaseFare);
           if (flight.Pricing.Taxes) {
@@ -168,11 +162,9 @@ const FlightResultsPage = () => {
           return total;
         }
 
-        // Try FareDetails structure
         if (flight.Pricing.FareDetails) {
           let total = 0;
           
-          // Handle outbound fare
           if (flight.Pricing.FareDetails.Outbound?.[0]) {
             const outbound = flight.Pricing.FareDetails.Outbound[0];
             total += parseFloat(outbound.BaseFare || 0) + 
@@ -180,7 +172,6 @@ const FlightResultsPage = () => {
                     parseFloat(outbound.VAT || 0);
           }
           
-          // Handle inbound fare for return flights
           if (flight.Pricing.FareDetails.Inbound?.[0]) {
             const inbound = flight.Pricing.FareDetails.Inbound[0];
             total += parseFloat(inbound.BaseFare || 0) + 
@@ -192,7 +183,6 @@ const FlightResultsPage = () => {
         }
       }
 
-      // Log the flight object for debugging if no fare structure is found
       console.warn('No valid fare structure found for flight:', flight);
       return 0;
 
@@ -202,11 +192,9 @@ const FlightResultsPage = () => {
     }
   };
 
-  // Helper function to safely parse currency values
   const parseCurrency = (value: string | number): number => {
     if (typeof value === 'number') return value;
     if (typeof value === 'string') {
-      // Remove currency symbols and commas, then parse
       const cleanValue = value.replace(/[^0-9.-]+/g, '');
       return parseFloat(cleanValue) || 0;
     }
@@ -222,32 +210,18 @@ const FlightResultsPage = () => {
 
       const flightId = flight.OfferId || flight.id || 'unknown';
 
-      // Check OutboundSegments[0].Departure.ScheduledTime
       if (flight.OutboundSegments?.[0]?.Departure?.ScheduledTime) {
         const departureTime = flight.OutboundSegments[0].Departure.ScheduledTime;
         const date = new Date(departureTime);
         
         if (!isNaN(date.getTime())) {
-          // Convert UTC to local time
           const localDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Dhaka' }));
           
-          // Calculate minutes since midnight
           let timeValue = localDate.getHours() * 60 + localDate.getMinutes();
           
-          // If the time is between 00:00 and 03:59, add 24 hours (1440 minutes)
-          // This ensures flights after midnight sort after flights from the previous day
-          if (timeValue < 240) { // 240 minutes = 4 hours
-            timeValue += 1440; // Add 24 hours worth of minutes
+          if (timeValue < 240) {
+            timeValue += 1440;
           }
-          
-          console.log(`Flight ${flightId} departure time:`, {
-            raw: departureTime,
-            localTime: localDate.toLocaleTimeString(),
-            timeValue,
-            adjustedHours: Math.floor(timeValue / 60),
-            minutes: timeValue % 60,
-            isNextDay: timeValue > 1440
-          });
           
           return timeValue;
         }
@@ -269,14 +243,12 @@ const FlightResultsPage = () => {
   const getSortedAndFilteredFlights = (flights: any[], options: Partial<SortOption>) => {
     if (!flights.length) return [];
     
-    // Create a new array with calculated details
     const flightsWithDetails = flights.map(flight => {
       const calculatedFare = getFare(flight);
       const departureTime = getDepartureTime(flight);
       const numberOfStops = flight.OutboundSegments?.length - 1 || 0;
       let layoverDuration = 0;
 
-      // Calculate total layover duration
       if (flight.OutboundSegments?.length > 1) {
         for (let i = 0; i < flight.OutboundSegments.length - 1; i++) {
           const currentSegment = flight.OutboundSegments[i];
@@ -287,7 +259,6 @@ const FlightResultsPage = () => {
         }
       }
 
-      // Get airline information
       const airline = flight.OutboundSegments?.[0]?.MarketingCarrier?.carrierName || '';
 
       return {
@@ -302,7 +273,6 @@ const FlightResultsPage = () => {
 
     let filteredFlights = [...flightsWithDetails];
 
-    // Apply filters
     if (options.stops?.length) {
       filteredFlights = filteredFlights.filter(flight => {
         const stopValue = options.stops?.[0];
@@ -320,123 +290,109 @@ const FlightResultsPage = () => {
       );
     }
 
-    // Sort flights based on active sorting criteria
     return filteredFlights.sort((a, b) => {
-      // Primary sort: Fare (always applied)
       const fareDiff = (options.fare === 'highToLow' ? -1 : 1) * 
         (a.calculatedFare - b.calculatedFare);
       if (fareDiff !== 0) return fareDiff;
 
-      // Secondary sort: Departure time
       if (options.takeoff) {
         const timeDiff = options.takeoff === 'laterToEarlier' ? 
           b.departureTime - a.departureTime :
           a.departureTime - b.departureTime;
         if (timeDiff !== 0) return timeDiff;
       } else {
-        // Default to earlier departure if no takeoff preference
         const timeDiff = a.departureTime - b.departureTime;
         if (timeDiff !== 0) return timeDiff;
       }
 
-      // Tertiary sort: Number of stops (prefer fewer stops by default)
       const stopsDiff = a.numberOfStops - b.numberOfStops;
       if (stopsDiff !== 0) return stopsDiff;
 
-      // Final sort: Layover duration
       if (options.layovers) {
         return options.layovers === 'highToLow' ?
           b.layoverDuration - a.layoverDuration :
           a.layoverDuration - b.layoverDuration;
       }
       
-      // Default to shorter layovers
       return a.layoverDuration - b.layoverDuration;
     });
   };
-  
- const fetchFlights = async () => {
-  setLoading(true);
-  setError(null);
 
-  try {
-    const segments = parseFlightSegments();
-    console.log('Sending request with segments:', segments);
+  const fetchFlights = async () => {
+    setLoading(true);
+    setError(null);
 
-    const requestBody = {
-      pointOfSale: "BD",
-      source: "bdfare",
-      request: {
-        originDest: segments.map(segment => ({
-          originDepRequest: { iatA_LocationCode: segment.fromCode, date: segment.date },
-          destArrivalRequest: { iatA_LocationCode: segment.toCode }
-        })),
-        pax: parsePassengers(),
-        shoppingCriteria: {
-          tripType: getApiTripType(searchParams?.get('tripType') as any),
-          travelPreferences: {
-            vendorPref: [],
-            cabinCode: searchParams?.get('class') || 'Economy'
-          },
-          returnUPSellInfo: true
+    try {
+      const segments = parseFlightSegments();
+      console.log('Sending request with segments:', segments);
+
+      const requestBody = {
+        pointOfSale: "BD",
+        source: "bdfare",
+        request: {
+          originDest: segments.map(segment => ({
+            originDepRequest: { iatA_LocationCode: segment.fromCode, date: segment.date },
+            destArrivalRequest: { iatA_LocationCode: segment.toCode }
+          })),
+          pax: parsePassengers(),
+          shoppingCriteria: {
+            tripType: getApiTripType(searchParams?.get('tripType') as any),
+            travelPreferences: {
+              vendorPref: [],
+              cabinCode: searchParams?.get('class') || 'Economy'
+            },
+            returnUPSellInfo: true
+          }
         }
-      }
-    };
+      };
 
-    // updated
+      console.log('Sending request with body:', JSON.stringify(requestBody, null, 2));
 
-    console.log('Sending request with body updated:', JSON.stringify(requestBody, null, 2));
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${apiUrl}/api/combined/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const response = await fetch(`${apiUrl}/api/combined/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        const rawBody = await response.text();
 
-    // If the response is not OK, read the body once and parse as JSON or text
-    if (!response.ok) {
-      let errorMessage = `HTTP error! status: ${response.status}`;
-      const rawBody = await response.text();  // <-- Read the body only once
+        try {
+          const errorData = JSON.parse(rawBody);
+          console.error('Error response JSON:', errorData);
+          errorMessage = errorData.error || errorData.details || errorMessage;
+        } catch (e) {
+          console.error('Error response text:', rawBody);
+          errorMessage = rawBody || errorMessage;
+        }
 
-      try {
-        // Attempt to parse the raw body as JSON
-        const errorData = JSON.parse(rawBody);
-        console.error('Error response JSON:', errorData);
-        // If the JSON contains an `error` or `details` field, use it
-        errorMessage = errorData.error || errorData.details || errorMessage;
-      } catch (e) {
-        // If parsing fails, we treat it as text
-        console.error('Error response text:', rawBody);
-        errorMessage = rawBody || errorMessage;
+        throw new Error(errorMessage);
       }
 
-      throw new Error(errorMessage);
+      const data = await response.json();
+      console.log('Received response:', data);
+
+      const flights = data.flights || [];
+      setFlightResults(flights);
+
+      const sortedResults = getSortedAndFilteredFlights(flights, sortOptions);
+      setSortedFlights(sortedResults);
+
+    } catch (error) {
+      console.error('Error fetching flights:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch flight results');
+      setFlightResults([]);
+      setSortedFlights([]);
+    } finally {
+      setTimeout(() => {
+        setLoading(false);
+      }, 500);
     }
-
-    // If the response is OK, parse JSON normally
-    const data = await response.json();
-    console.log('Received response:', data);
-
-    const flights = data.flights || [];
-    setFlightResults(flights);
-
-    // Sort/filter if needed
-    const sortedResults = getSortedAndFilteredFlights(flights, sortOptions);
-    setSortedFlights(sortedResults);
-
-  } catch (error) {
-    console.error('Error fetching flights:', error);
-    setError(error instanceof Error ? error.message : 'Failed to fetch flight results');
-    setFlightResults([]);
-    setSortedFlights([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const updateSearchParams = (type: 'departure' | 'return', date: Date) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -499,7 +455,6 @@ const FlightResultsPage = () => {
       combined: { ...sortOptions, ...newOptions }
     });
     
-    // Create new sort options
     const updatedOptions = { ...sortOptions, ...newOptions };
     
     console.log('Applying sort with flights:', {
@@ -507,7 +462,6 @@ const FlightResultsPage = () => {
       firstFlight: flightResults[0]
     });
     
-    // Apply sorting immediately with fresh copy of flights
     const newSortedFlights = getSortedAndFilteredFlights([...flightResults], updatedOptions);
     
     console.log('Sorting complete:', {
@@ -515,7 +469,6 @@ const FlightResultsPage = () => {
       firstSortedFlight: newSortedFlights[0]
     });
     
-    // Update both state values
     setSortOptions(updatedOptions);
     setSortedFlights(newSortedFlights);
   };
@@ -568,24 +521,10 @@ const FlightResultsPage = () => {
           Flight Results
         </h2>
         
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
-            {error}
-          </div>
-        )}
-        
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-            <span className="ml-3 text-gray-600 dark:text-gray-400">Searching for flights...</span>
-          </div>
-        ) : sortedFlights.length > 0 ? (
-          <FlightResultsList flights={sortedFlights} />
-        ) : !error && (
-          <p className="text-gray-600 dark:text-gray-400 text-center py-8">
-            No flights found for your search criteria. Please try different dates or routes.
-            </p>
-        )}
+        <FlightResultsList 
+          flights={sortedFlights} 
+          isLoading={loading}
+        />
       </div>
     </div>
   );
