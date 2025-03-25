@@ -19,6 +19,23 @@ interface Passenger {
   ptc: string;
 }
 
+interface Segment {
+  MarketingCarrier: {
+    carrierDesigCode: string;
+    carrierName: string;
+  };
+  Logo: string;
+}
+
+interface Flight {
+  OutboundSegments: Segment[];
+  Pricing?: {
+    totalPayable?: {
+      total: number;
+    };
+  };
+}
+
 const FlightResultsPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -285,9 +302,12 @@ const FlightResultsPage = () => {
     }
 
     if (options.airline?.length) {
-      filteredFlights = filteredFlights.filter(flight => 
-        options.airline?.includes(flight.airline)
-      );
+      filteredFlights = filteredFlights.filter(flight => {
+        const flightAirlineCodes = (flight.OutboundSegments as Segment[] || [])
+          .map(segment => segment?.MarketingCarrier?.carrierDesigCode)
+          .filter((code: string | undefined): code is string => Boolean(code));
+        return flightAirlineCodes.some((code: string) => options.airline?.includes(code));
+      });
     }
 
     return filteredFlights.sort((a, b) => {
@@ -514,6 +534,7 @@ const FlightResultsPage = () => {
         onSortChange={handleSortChange}
         availableAirlines={getAvailableAirlines()}
         currentSort={sortOptions}
+        flights={flightResults}
       />
       
       <div className="bg-white dark:bg-black p-6 rounded-lg border border-gray-200 dark:border-gray-800">
