@@ -242,10 +242,10 @@ const FlightCalendarSection: React.FC<FlightCalendarSectionProps> = ({
 
   return (
     <div className={`bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-4 ${className}`}>
-      <h2 className="text-lg font-semibold mb-4">Flexible Dates</h2>
+      <h2 className="text-lg font-semibold mb-4">Flexible dates</h2>
       <div className="space-y-4">
         <div>
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Departure Dates</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Departure dates</div>
           <FlightSuggestionCalendar
             selectedDate={departureDate}
             onDateSelect={onDepartureDateSelect}
@@ -268,7 +268,7 @@ const FlightCalendarSection: React.FC<FlightCalendarSectionProps> = ({
 
         {tripType === 'roundTrip' && (
           <div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Return Dates</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Return dates</div>
             <FlightSuggestionCalendar
               selectedDate={returnDate}
               onDateSelect={onReturnDateSelect}

@@ -151,43 +151,67 @@ interface ReturnFlightOffer {
     SubTotal: number
   }>
   Pricing: {
-    totalPayable?: {
-      total: number
-      currency: string
-    }
-    gross?: {
-      total: number
-      currency: string
-    }
-    discount?: {
-      total: number
-      currency: string
-    }
-    totalVAT?: {
-      total: number
-      currency: string
-    }
     FareDetails?: {
-      Outbound: any[]
-      Inbound: any[]
+      Outbound: Array<{
+        BaseFare: number
+        Tax: number
+        VAT: number
+        Currency: string
+        PaxType: string
+        PaxCount: number
+        SubTotal: number
+      }>
+      Inbound: Array<{
+        BaseFare: number
+        Tax: number
+        VAT: number
+        Currency: string
+        PaxType: string
+        PaxCount: number
+        SubTotal: number
+      }>
     }
     PriceBreakdown?: {
-      Outbound: any
-      Inbound: any
+      Outbound: {
+        totalPayable: {
+          total: number
+          currency: string
+        }
+      }
+      Inbound: {
+        totalPayable: {
+          total: number
+          currency: string
+        }
+      }
     }
   }
-  Baggage: Array<{
-    Departure: string
-    Arrival: string
-    CheckIn: Array<{
-      paxType: string
-      allowance: string
+  Baggage: {
+    Outbound: Array<{
+      Departure: string
+      Arrival: string
+      CheckIn: Array<{
+        paxType: string
+        allowance: string
+      }>
+      Cabin: Array<{
+        paxType: string
+        allowance: string
+      }>
     }>
-    Cabin: Array<{
-      paxType: string
-      allowance: string
+    Inbound: Array<{
+      Departure: string
+      Arrival: string
+      CheckIn: Array<{
+        paxType: string
+        allowance: string
+      }>
+      Cabin: Array<{
+        paxType: string
+        allowance: string
+      }>
     }>
-  }>
+  }
   Refundable: boolean
   SeatsRemaining: number
   UpSellBrandList: UpSellBrand[] | null
@@ -302,28 +326,61 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
 
   // Update the getBaggageAllowance function
   const getBaggageAllowance = () => {
-    if (!offer.Baggage?.[0]?.CheckIn) {
+    try {
+      // Check if Baggage exists and has Outbound array
+      if (!offer?.Baggage?.Outbound || !Array.isArray(offer.Baggage.Outbound) || offer.Baggage.Outbound.length === 0) {
+        return '20kg';
+      }
+
+      // Check if first outbound segment has CheckIn array
+      const outboundBaggage = offer.Baggage.Outbound[0];
+      if (!outboundBaggage?.CheckIn || !Array.isArray(outboundBaggage.CheckIn)) {
+        return '20kg';
+      }
+
+      // Find adult baggage allowance
+      const checkInBaggage = outboundBaggage.CheckIn.find(
+        (item: { paxType: string; allowance: string }) => 
+          item && typeof item === 'object' && item.paxType === 'Adult'
+      );
+
+      // Return allowance if found, otherwise default to 20kg
+      return checkInBaggage?.allowance || '20kg';
+    } catch (error) {
+      console.error('Error getting baggage allowance:', error);
       return '20kg';
     }
-    
-    const checkInBaggage = offer.Baggage[0].CheckIn.find(
-      (item: { paxType: string; allowance: string }) => item.paxType === 'Adult'
-    );
-    
-    return checkInBaggage?.allowance || '20kg';
   };
 
-  // Update the getBaggageAllowance function for the selected brand
+  // Update the getBaggageAllowanceForBrand function
   const getBaggageAllowanceForBrand = (brand: UpSellBrand | null) => {
-    if (!brand?.upSellBrand?.baggageAllowanceList?.[0]?.baggageAllowance?.checkIn) {
-      return getBaggageAllowance(); // Fall back to default baggage allowance
+    try {
+      // If no brand is selected, return default baggage allowance
+      if (!brand) {
+        return getBaggageAllowance();
+      }
+
+      // Check if baggageAllowanceList exists and has items
+      if (!brand.upSellBrand?.baggageAllowanceList?.length) {
+        return getBaggageAllowance();
+      }
+
+      // Get the first baggage allowance
+      const baggageAllowance = brand.upSellBrand.baggageAllowanceList[0]?.baggageAllowance;
+      if (!baggageAllowance?.checkIn?.length) {
+        return getBaggageAllowance();
+      }
+
+      // Find adult baggage allowance
+      const checkInBaggage = baggageAllowance.checkIn.find(
+        item => item && typeof item === 'object' && item.paxType === 'Adult'
+      );
+
+      return checkInBaggage?.allowance || getBaggageAllowance();
+    } catch (error) {
+      console.error('Error getting brand baggage allowance:', error);
+      return getBaggageAllowance();
     }
-    
-    const checkInBaggage = brand.upSellBrand.baggageAllowanceList[0].baggageAllowance.checkIn.find(
-      item => item.paxType === 'Adult'
-    );
-    
-    return checkInBaggage?.allowance || '20kg';
   };
 
   // Add this helper function to calculate stay duration
@@ -541,47 +598,75 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
   const renderFareSummary = () => {
     if (activeTab !== 'fare-summary') return null;
 
+    // Get the fare details from the correct structure
+    const fareDetails = {
+      outbound: offer.Pricing?.FareDetails?.Outbound || [],
+      inbound: offer.Pricing?.FareDetails?.Inbound || []
+    };
+
+    // Get total amounts from FareDetails
+    const outboundTotal = fareDetails.outbound.reduce((total, fare) => total + (fare.SubTotal || 0), 0);
+    const inboundTotal = fareDetails.inbound.reduce((total, fare) => total + (fare.SubTotal || 0), 0);
+
     return (
       <div className="overflow-x-auto">
         <div className="min-w-[600px] sm:min-w-0 space-y-6">
-          {/* Agent Summary Section */}
+          {/* Outbound Fare Details */}
           <div className="space-y-4">
-            <div className="text-lg font-semibold">Fare Summary</div>
-            
-            {/* Fare Details */}
-            {offer.FareDetails.map((fare, index) => (
-              <div key={index} className="space-y-2">
+            <div className="text-lg font-semibold">Outbound Flight Fare</div>
+            {fareDetails.outbound.map((fare, index) => (
+              <div key={`outbound-${index}`} className="space-y-2">
                 <div className="font-medium">
                   {fare.PaxType} × {fare.PaxCount}
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm pl-4">
                   <div className="text-muted-foreground">Base Fare</div>
-                  <div>BDT {formatPrice(fare.BaseFare)}</div>
+                  <div>BDT {formatPrice(fare.BaseFare || 0)}</div>
                   <div className="text-muted-foreground">Tax</div>
-                  <div>BDT {formatPrice(fare.Tax)}</div>
-                  <div className="text-muted-foreground">Other Charges</div>
-                  <div>BDT {formatPrice(fare.OtherFee)}</div>
+                  <div>BDT {formatPrice(fare.Tax || 0)}</div>
                   <div className="text-muted-foreground">VAT</div>
-                  <div>BDT {formatPrice(fare.VAT)}</div>
+                  <div>BDT {formatPrice(fare.VAT || 0)}</div>
                   <div className="font-medium">Subtotal</div>
-                  <div className="font-medium">BDT {formatPrice(fare.SubTotal)}</div>
+                  <div className="font-medium">BDT {formatPrice(fare.SubTotal || 0)}</div>
                 </div>
               </div>
             ))}
+            <div className="text-right text-sm">
+              <div>Total: BDT {formatPrice(outboundTotal)}</div>
+            </div>
           </div>
 
-          {/* Total Section */}
-          <div className="space-y-3 border-t pt-3">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {offer.Pricing.totalVAT && (
-                <>
-                  <div className="text-muted-foreground">Total VAT</div>
-                  <div>BDT {formatPrice(offer.Pricing.totalVAT.total)}</div>
-                </>
-              )}
+          {/* Inbound Fare Details */}
+          <div className="space-y-4">
+            <div className="text-lg font-semibold">Return Flight Fare</div>
+            {fareDetails.inbound.map((fare, index) => (
+              <div key={`inbound-${index}`} className="space-y-2">
+                <div className="font-medium">
+                  {fare.PaxType} × {fare.PaxCount}
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm pl-4">
+                  <div className="text-muted-foreground">Base Fare</div>
+                  <div>BDT {formatPrice(fare.BaseFare || 0)}</div>
+                  <div className="text-muted-foreground">Tax</div>
+                  <div>BDT {formatPrice(fare.Tax || 0)}</div>
+                  <div className="text-muted-foreground">VAT</div>
+                  <div>BDT {formatPrice(fare.VAT || 0)}</div>
+                  <div className="font-medium">Subtotal</div>
+                  <div className="font-medium">BDT {formatPrice(fare.SubTotal || 0)}</div>
+                </div>
+              </div>
+            ))}
+            <div className="text-right text-sm">
+              <div>Total: BDT {formatPrice(inboundTotal)}</div>
+            </div>
+          </div>
+
+          {/* Grand Total */}
+          <div className="border-t pt-4">
+            <div className="grid grid-cols-2 gap-2">
               <div className="font-medium text-base">Grand Total</div>
-              <div className="font-medium text-base">
-                BDT {formatPrice(offer.Pricing.totalPayable?.total || 0)}
+              <div className="font-medium text-base text-right">
+                BDT {formatPrice(outboundTotal + inboundTotal)}
               </div>
             </div>
           </div>
@@ -593,46 +678,92 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
   const renderBaggageInfo = () => {
     if (activeTab !== 'baggage') return null;
 
-    return (
-      <div className="space-y-6">
-        {offer.Baggage.map((baggage, index) => (
-          <div key={index} className="space-y-4">
-            <div className="font-semibold">
-              {baggage.Departure} → {baggage.Arrival}
-            </div>
-            
-            {/* Check-in Baggage */}
+    // Get baggage info from the correct structure
+    const baggageInfo = {
+      outbound: offer.Baggage?.Outbound?.[0] || null,
+      inbound: offer.Baggage?.Inbound?.[0] || null
+    };
+
+    const renderBaggageSection = (baggage: any, title: string) => {
+      if (!baggage) {
+        // Provide default baggage info if none exists
+        return (
+          <div className="space-y-4">
+            <div className="font-semibold">{title}</div>
             <div className="space-y-2">
               <div className="text-sm font-medium">Check-in Baggage</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {baggage.CheckIn.map((item, idx) => (
-                  <div key={idx} className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
-                    <div className="text-sm text-muted-foreground">{item.paxType}</div>
-                    <div className="font-medium">{item.allowance}</div>
-                  </div>
-                ))}
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">Adult</div>
+                  <div className="font-medium">20kg</div>
+                </div>
               </div>
             </div>
-
-            {/* Cabin Baggage */}
             <div className="space-y-2">
               <div className="text-sm font-medium">Cabin Baggage</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {baggage.Cabin.map((item, idx) => (
-                  <div key={idx} className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
-                    <div className="text-sm text-muted-foreground">{item.paxType}</div>
-                    <div className="font-medium">{item.allowance}</div>
-                  </div>
-                ))}
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">Adult</div>
+                  <div className="font-medium">7kg</div>
+                </div>
               </div>
             </div>
           </div>
-        ))}
+        );
+      }
+
+      return (
+        <div className="space-y-4">
+          <div className="font-semibold">{title}</div>
+          
+          {/* Check-in Baggage */}
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Check-in Baggage</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {baggage.CheckIn?.map((item: any, idx: number) => (
+                <div key={idx} className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">{item.paxType}</div>
+                  <div className="font-medium">{item.allowance}</div>
+                </div>
+              )) || (
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">Adult</div>
+                  <div className="font-medium">20kg</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Cabin Baggage */}
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Cabin Baggage</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {baggage.Cabin?.map((item: any, idx: number) => (
+                <div key={idx} className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">{item.paxType}</div>
+                  <div className="font-medium">{item.allowance}</div>
+                </div>
+              )) || (
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md">
+                  <div className="text-sm text-muted-foreground">Adult</div>
+                  <div className="font-medium">7kg</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <div className="space-y-6">
+        {renderBaggageSection(baggageInfo.outbound, "Outbound Flight Baggage")}
+        {renderBaggageSection(baggageInfo.inbound, "Return Flight Baggage")}
       </div>
     );
   };
 
-  // Add helper function to get total price
+  // Update getTotalPrice function
   const getTotalPrice = (offer: ReturnFlightOffer): number => {
     try {
       // Check for selected brand price first
@@ -640,25 +771,19 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
         return selectedBrand.upSellBrand.price.totalPayable.total;
       }
 
-      // Check for split pricing structure
-      if (offer.Pricing.PriceBreakdown) {
-        const outboundTotal = offer.Pricing.PriceBreakdown.Outbound?.totalPayable?.total || 0;
-        const inboundTotal = offer.Pricing.PriceBreakdown.Inbound?.totalPayable?.total || 0;
-        return outboundTotal + inboundTotal;
-      }
+      // Calculate from FareDetails
+      const outboundTotal = offer.Pricing?.FareDetails?.Outbound?.reduce(
+        (total, fare) => total + (fare.SubTotal || 0), 
+        0
+      ) || 0;
 
-      // Check for combined pricing structure
-      if (offer.Pricing.totalPayable?.total) {
-        return offer.Pricing.totalPayable.total;
-      }
+      const inboundTotal = offer.Pricing?.FareDetails?.Inbound?.reduce(
+        (total, fare) => total + (fare.SubTotal || 0), 
+        0
+      ) || 0;
 
-      // Calculate from fare details if available
-      if (offer.FareDetails?.length) {
-        return offer.FareDetails.reduce((total, fare) => total + (fare.SubTotal || 0), 0);
-      }
+      return outboundTotal + inboundTotal;
 
-      console.warn('No valid pricing structure found for offer:', offer);
-      return 0;
     } catch (error) {
       console.error('Error calculating total price:', error);
       return 0;

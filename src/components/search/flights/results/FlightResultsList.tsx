@@ -64,7 +64,7 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({ flights, isLoadin
     <div className="w-full max-w-5xl mx-auto">
       {/* Results Summary */}
       <div className="mb-4 text-sm text-muted-foreground">
-        Showing {summary.flightCount} flight{summary.flightCount !== 1 ? 's' : ''} & {summary.airlineCount} Airline{summary.airlineCount !== 1 ? 's' : ''}
+        Showing {summary.flightCount} flight{summary.flightCount !== 1 ? 's' : ''} & {summary.airlineCount} airline{summary.airlineCount !== 1 ? 's' : ''}
       </div>
 
       {/* Flight Cards */}

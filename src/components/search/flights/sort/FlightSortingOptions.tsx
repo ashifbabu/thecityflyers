@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import { AdjustmentsHorizontalIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import AirlineFilter from '../filter/AirlineFilter';
 
 export type SortOption = {
@@ -42,14 +42,18 @@ interface FlightSortingOptionsProps {
   availableAirlines: string[];
   currentSort: Partial<SortOption>;
   flights: Flight[] | { flights: Flight[] } | any[];
+  expandAllOptions?: boolean;
 }
 
 const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
   onSortChange,
   availableAirlines,
   currentSort,
-  flights = []
+  flights = [],
+  expandAllOptions = false
 }) => {
+  const [isExpanded, setIsExpanded] = useState(expandAllOptions);
+
   // Process flights to get airline data
   const airlinesData = useMemo(() => {
     console.log('Processing flights:', flights);
@@ -137,15 +141,39 @@ const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
     onSortChange({ airline: newAirlines });
   };
 
-  return (
-    <div className="bg-white dark:bg-black p-4 rounded-lg border border-gray-200 dark:border-gray-800">
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <AdjustmentsHorizontalIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          <span className="font-medium">Sort & Filter</span>
-        </div>
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
 
+  return (
+    <div className="relative bg-white dark:bg-black p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+      {/* Header with Sorting Title */}
+      <div className="flex items-center gap-2 mb-4 relative">
+        <AdjustmentsHorizontalIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        <span className="font-medium">Sorting</span>
+
+        {/* Expand/Collapse Button - Positioned Top Right */}
+        {!expandAllOptions && (
+          <button 
+            onClick={toggleExpand} 
+            className="absolute top-0 right-0 flex items-center gap-2 text-sm text-primary hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-1 rounded-lg transition-colors"
+          >
+            {isExpanded ? (
+              <>
+                Collapse Options
+                <ChevronUpIcon className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                Expand Options
+                <ChevronDownIcon className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-4">
         {/* Airline Filter */}
         <div className="pt-2">
           <AirlineFilter
@@ -162,8 +190,8 @@ const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
             onChange={(e) => onSortChange({ fare: e.target.value as SortOption['fare'] })}
             value={currentSort.fare}
           >
-            <option value="lowToHigh">Price: Low to High</option>
-            <option value="highToLow">Price: High to Low</option>
+            <option value="lowToHigh">Price: Low to high</option>
+            <option value="highToLow">Price: High to low</option>
           </select>
 
           <select
@@ -171,34 +199,36 @@ const FlightSortingOptions: React.FC<FlightSortingOptionsProps> = ({
             onChange={(e) => onSortChange({ takeoff: e.target.value as SortOption['takeoff'] })}
             value={currentSort.takeoff}
           >
-            <option value="earlierToLater">Departure: Early to Late</option>
-            <option value="laterToEarlier">Departure: Late to Early</option>
+            <option value="earlierToLater">Departure: Early to late</option>
+            <option value="laterToEarlier">Departure: Late to early</option>
           </select>
         </div>
 
         {/* Additional Sort Options */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <select
-            className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-            onChange={(e) => onSortChange({ stops: e.target.value ? [e.target.value] : [] })}
-            value={currentSort.stops?.[0] || ''}
-          >
-            <option value="">All Stops</option>
-            <option value="0">Non-stop</option>
-            <option value="1">1 Stop</option>
-            <option value="2">2 Stops</option>
-            <option value="2+">2+ Stops</option>
-          </select>
+        {(isExpanded || expandAllOptions) && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <select
+              className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+              onChange={(e) => onSortChange({ stops: e.target.value ? [e.target.value] : [] })}
+              value={currentSort.stops?.[0] || ''}
+            >
+              <option value="">All stops</option>
+              <option value="0">Non-stop</option>
+              <option value="1">1 Stop</option>
+              <option value="2">2 Stops</option>
+              <option value="2+">2+ Stops</option>
+            </select>
 
-          <select
-            className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-            onChange={(e) => onSortChange({ layovers: e.target.value as SortOption['layovers'] })}
-            value={currentSort.layovers}
-          >
-            <option value="lowToHigh">Layover: Short to Long</option>
-            <option value="highToLow">Layover: Long to Short</option>
-          </select>
-        </div>
+            <select
+              className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+              onChange={(e) => onSortChange({ layovers: e.target.value as SortOption['layovers'] })}
+              value={currentSort.layovers}
+            >
+              <option value="lowToHigh">Layover: Short to long</option>
+              <option value="highToLow">Layover: Long to short</option>
+            </select>
+          </div>
+        )}
       </div>
     </div>
   );

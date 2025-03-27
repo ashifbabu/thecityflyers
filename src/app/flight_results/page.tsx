@@ -538,10 +538,6 @@ const FlightResultsPage = () => {
       />
       
       <div className="bg-white dark:bg-black p-6 rounded-lg border border-gray-200 dark:border-gray-800">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-          Flight Results
-        </h2>
-        
         <FlightResultsList 
           flights={sortedFlights} 
           isLoading={loading}
