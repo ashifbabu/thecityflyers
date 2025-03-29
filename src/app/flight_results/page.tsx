@@ -27,13 +27,41 @@ interface Segment {
   Logo: string;
 }
 
+interface PricingTotal {
+  total: number;
+  currency: string;
+}
+
+interface ComplexPricing {
+  totalPayable: PricingTotal;
+  gross?: PricingTotal;
+  discount?: PricingTotal;
+  totalVAT?: PricingTotal;
+}
+
+interface FareDetail {
+  BaseFare: number;
+  Tax: number;
+  OtherFee: number;
+  Discount: number;
+  VAT: number;
+  Currency: string;
+  PaxType: string;
+  PaxCount: number;
+  SubTotal: number;
+}
+
+interface FlightPricing {
+  Pricing?: ComplexPricing;
+  FareDetails?: FareDetail[];
+  totalAmount?: number;
+  Price?: number;
+  fare?: number;
+}
+
 interface Flight {
   OutboundSegments: Segment[];
-  Pricing?: {
-    totalPayable?: {
-      total: number;
-    };
-  };
+  Pricing?: FlightPricing;
 }
 
 const FlightResultsPage = () => {
@@ -153,6 +181,19 @@ const FlightResultsPage = () => {
     }
 
     try {
+      // First check for Pricing.totalPayable.total (Biman Airlines structure)
+      if (flight.Pricing?.totalPayable?.total) {
+        return parseFloat(flight.Pricing.totalPayable.total);
+      }
+
+      // Check FareDetails array (another common structure)
+      if (Array.isArray(flight.FareDetails) && flight.FareDetails.length > 0) {
+        return flight.FareDetails.reduce((total: number, detail: any) => {
+          return total + (parseFloat(detail.SubTotal) || 0);
+        }, 0);
+      }
+
+      // Check for direct pricing properties
       if (flight.totalAmount) {
         return parseFloat(flight.totalAmount);
       }
@@ -165,46 +206,37 @@ const FlightResultsPage = () => {
         return parseFloat(flight.fare);
       }
 
-      if (flight.Pricing) {
-        if (flight.Pricing.totalPayable?.total) {
-          return parseFloat(flight.Pricing.totalPayable.total);
+      // Check for FareDetails in Pricing structure
+      if (flight.Pricing?.FareDetails) {
+        let total = 0;
+        
+        // Handle Outbound fares
+        if (Array.isArray(flight.Pricing.FareDetails.Outbound)) {
+          total += flight.Pricing.FareDetails.Outbound.reduce((sum: number, fare: any) => 
+            sum + (parseFloat(fare.SubTotal) || 0), 0);
         }
-
-        if (flight.Pricing.BaseFare) {
-          let total = parseFloat(flight.Pricing.BaseFare);
-          if (flight.Pricing.Taxes) {
-            total += flight.Pricing.Taxes.reduce((sum: number, tax: any) => 
-              sum + parseFloat(tax.Amount || 0), 0);
-          }
-          return total;
+        
+        // Handle Inbound fares
+        if (Array.isArray(flight.Pricing.FareDetails.Inbound)) {
+          total += flight.Pricing.FareDetails.Inbound.reduce((sum: number, fare: any) => 
+            sum + (parseFloat(fare.SubTotal) || 0), 0);
         }
-
-        if (flight.Pricing.FareDetails) {
-          let total = 0;
-          
-          if (flight.Pricing.FareDetails.Outbound?.[0]) {
-            const outbound = flight.Pricing.FareDetails.Outbound[0];
-            total += parseFloat(outbound.BaseFare || 0) + 
-                    parseFloat(outbound.Tax || 0) + 
-                    parseFloat(outbound.VAT || 0);
-          }
-          
-          if (flight.Pricing.FareDetails.Inbound?.[0]) {
-            const inbound = flight.Pricing.FareDetails.Inbound[0];
-            total += parseFloat(inbound.BaseFare || 0) + 
-                    parseFloat(inbound.Tax || 0) + 
-                    parseFloat(inbound.VAT || 0);
-          }
-
-          if (total > 0) return total;
-        }
+        
+        if (total > 0) return total;
       }
 
-      console.warn('No valid fare structure found for flight:', flight);
-      return 0;
+      // If we reach here, log the structure for debugging
+      console.warn('Unhandled pricing structure:', {
+        hasPricing: !!flight.Pricing,
+        hasBaseFare: !!flight.Pricing?.BaseFare,
+        hasFareDetails: !!flight.FareDetails,
+        pricingStructure: flight.Pricing,
+        fareDetails: flight.FareDetails
+      });
 
+      return 0;
     } catch (error) {
-      console.error('Error calculating fare:', error);
+      console.error('Error calculating fare:', error, 'Flight:', flight);
       return 0;
     }
   };

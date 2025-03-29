@@ -151,6 +151,10 @@ interface ReturnFlightOffer {
     SubTotal: number
   }>
   Pricing: {
+    totalPayable?: {
+      total: number
+      currency: string
+    }
     FareDetails?: {
       Outbound: Array<{
         BaseFare: number
@@ -766,24 +770,56 @@ const ReturnFlightCard: React.FC<ReturnFlightCardProps> = ({ offer, totalPasseng
   // Update getTotalPrice function
   const getTotalPrice = (offer: ReturnFlightOffer): number => {
     try {
-      // Check for selected brand price first
+      // First check selected brand price if available
       if (selectedBrand?.upSellBrand?.price?.totalPayable?.total) {
         return selectedBrand.upSellBrand.price.totalPayable.total;
       }
-
-      // Calculate from FareDetails
-      const outboundTotal = offer.Pricing?.FareDetails?.Outbound?.reduce(
-        (total, fare) => total + (fare.SubTotal || 0), 
-        0
-      ) || 0;
-
-      const inboundTotal = offer.Pricing?.FareDetails?.Inbound?.reduce(
-        (total, fare) => total + (fare.SubTotal || 0), 
-        0
-      ) || 0;
-
-      return outboundTotal + inboundTotal;
-
+  
+      // Check main pricing structure (Biman Airlines structure)
+      if (offer.Pricing?.totalPayable?.total) {
+        return offer.Pricing.totalPayable.total;
+      }
+  
+      // Check FareDetails array
+      if (Array.isArray(offer.FareDetails) && offer.FareDetails.length > 0) {
+        return offer.FareDetails.reduce((total, detail) => 
+          total + (parseFloat(detail.SubTotal.toString()) || 0), 0
+        );
+      }
+  
+      // Check for split pricing structure
+      if (offer.Pricing?.FareDetails) {
+        let total = 0;
+  
+        // Add outbound fares
+        if (Array.isArray(offer.Pricing.FareDetails.Outbound)) {
+          total += offer.Pricing.FareDetails.Outbound.reduce((sum, fare) => 
+            sum + (parseFloat(fare.SubTotal.toString()) || 0), 0
+          );
+        }
+  
+        // Add inbound fares
+        if (Array.isArray(offer.Pricing.FareDetails.Inbound)) {
+          total += offer.Pricing.FareDetails.Inbound.reduce((sum, fare) => 
+            sum + (parseFloat(fare.SubTotal.toString()) || 0), 0
+          );
+        }
+  
+        if (total > 0) return total;
+      }
+  
+      // Log unhandled pricing structure
+      console.warn('Unhandled pricing structure in ReturnFlightCard:', {
+        hasPricing: !!offer.Pricing,
+        hasTotalPayable: !!offer.Pricing?.totalPayable,
+        hasFareDetails: !!offer.FareDetails,
+        hasPricingFareDetails: !!offer.Pricing?.FareDetails,
+        hasPriceBreakdown: !!offer.Pricing?.PriceBreakdown,
+        pricingStructure: offer.Pricing,
+        fareDetails: offer.FareDetails
+      });
+  
+      return 0;
     } catch (error) {
       console.error('Error calculating total price:', error);
       return 0;
